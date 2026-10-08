@@ -197,6 +197,13 @@ Issues and pull requests are welcome. This is a personal learning project, so ex
 
 Please keep the core architectural rule intact: **business logic belongs in `service/`**, and `web/` / `api/` stay as thin adapters.
 
+## Documentation
+
+- [`docs/tech-stack.md`](docs/tech-stack.md) — architecture, technology choices, and conventions
+- [`docs/ui-design.md`](docs/ui-design.md) — the visual design system (Clinical Clean)
+- [`docs/db-schema.md`](docs/db-schema.md) — database schema and entity relationships
+- [`docs/api.md`](docs/api.md) — REST API contract (enabled in phase 2)
+
 ## License
 
 Released under the [MIT License](LICENSE).
