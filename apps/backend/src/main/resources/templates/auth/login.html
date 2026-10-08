@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('登录')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper content-wrapper--narrow">
+    <div class="card auth-card">
+        <header class="page-header">
+            <h1 class="page-title">登录</h1>
+            <p class="page-subtitle">使用手机号登录 MediSlot</p>
+        </header>
+
+        <div class="alert alert-success" th:if="${param.registered}">注册成功，请登录</div>
+        <div class="alert alert-danger" th:if="${param.error}">手机号或密码错误</div>
+        <div class="alert alert-success" th:if="${param.logout}">已安全退出</div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="mb-3">
+                <label class="form-label" for="username">手机号</label>
+                <input class="form-control" id="username" name="username" type="text"
+                       placeholder="请输入手机号" required autofocus>
+            </div>
+            <div class="mb-4">
+                <label class="form-label" for="password">密码</label>
+                <input class="form-control" id="password" name="password" type="password"
+                       placeholder="请输入密码" required>
+            </div>
+            <button class="btn btn-primary w-100" type="submit">登录</button>
+        </form>
+
+        <p class="auth-alt">还没有账号？<a th:href="@{/register}">立即注册</a></p>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

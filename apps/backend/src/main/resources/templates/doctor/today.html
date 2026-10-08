@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('今日预约')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title">今日预约</h1>
+        <p class="page-subtitle" th:text="${#temporals.format(today,'yyyy年M月d日 EEEE')}">2026年10月8日 星期四</p>
+    </header>
+
+    <div th:if="${#lists.isEmpty(appointments)}" class="empty-state">
+        <i class="bi bi-calendar-x empty-state__icon"></i>
+        <p class="empty-state__title">今天还没有患者预约</p>
+        <p class="empty-state__hint">患者预约后会出现在这里</p>
+    </div>
+
+    <div class="appt-list" th:unless="${#lists.isEmpty(appointments)}">
+        <div class="card appt-card" th:each="a : ${appointments}">
+            <div class="appt-card__time"
+                 th:text="${#temporals.format(a.schedule.startTime,'HH:mm')} + ' - ' + ${#temporals.format(a.schedule.endTime,'HH:mm')}">
+                09:00 - 09:30
+            </div>
+            <div class="appt-card__body">
+                <div class="appt-card__name">
+                    <span th:text="${a.patient.name}">王小明</span>
+                    <span class="badge-status"
+                          th:classappend="${a.status.name() == 'PENDING' ? 'badge-pending' : (a.status.name() == 'CHECKED_IN' ? 'badge-checked' : (a.status.name() == 'COMPLETED' ? 'badge-completed' : 'badge-cancelled'))}"
+                          th:text="${a.status.label}">待就诊</span>
+                </div>
+                <div class="appt-card__meta">
+                    <span th:text="${a.patient.phone}">13900000000</span>
+                    <span class="dot">·</span>
+                    <span th:text="${a.reason != null ? a.reason : '未填写就诊原因'}">感冒</span>
+                </div>
+                <div class="appt-card__no" th:text="${'编号 ' + a.appointmentNo}">编号 A20261008-001</div>
+            </div>
+            <div class="appt-card__actions">
+                <form th:if="${a.status.name() == 'PENDING'}"
+                      th:action="@{/doctor/appointments/{id}/checkin(id=${a.id})}" method="post">
+                    <button class="btn btn-primary btn-sm" type="submit">已到诊</button>
+                </form>
+                <form th:if="${a.status.name() == 'CHECKED_IN'}"
+                      th:action="@{/doctor/appointments/{id}/complete(id=${a.id})}" method="post"
+                      class="complete-form">
+                    <input class="form-control form-control-sm" type="text" name="note"
+                           placeholder="诊断备注（选填）">
+                    <button class="btn btn-primary btn-sm" type="submit">完成</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('预约成功')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper content-wrapper--narrow">
+    <div class="card success-card">
+        <i class="bi bi-check-circle success-card__icon"></i>
+        <h1 class="success-card__title">预约成功</h1>
+        <p class="success-card__no" th:text="${'预约编号 ' + appointment.appointmentNo}">预约编号 A20261015-003</p>
+        <dl class="success-detail">
+            <div>
+                <dt>医生</dt>
+                <dd th:text="${appointment.schedule.doctor.name} + ' · ' + ${appointment.schedule.doctor.department.name}">
+                    张明华 · 内科
+                </dd>
+            </div>
+            <div>
+                <dt>时间</dt>
+                <dd th:text="${#temporals.format(appointment.schedule.date,'yyyy年M月d日 EEEE')} + ' ' + ${#temporals.format(appointment.schedule.startTime,'HH:mm')} + ' - ' + ${#temporals.format(appointment.schedule.endTime,'HH:mm')}">
+                    2026年10月15日 星期三 09:00 - 09:30
+                </dd>
+            </div>
+            <div th:if="${appointment.reason != null}">
+                <dt>就诊原因</dt>
+                <dd th:text="${appointment.reason}">感冒发烧</dd>
+            </div>
+        </dl>
+        <div class="form-actions form-actions--center">
+            <a class="btn btn-outline-primary" th:href="@{/}">返回首页</a>
+            <a class="btn btn-primary" th:href="@{/appointments/my}">查看我的预约</a>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

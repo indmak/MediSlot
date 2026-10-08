@@ -1,0 +1,30 @@
+# ===== 容器环境（docker compose / 云端部署） =====
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jpa:
+    hibernate:
+      # 表结构稳定后建议切换为 validate，并配合 scripts/init.sql / Flyway
+      ddl-auto: update
+    show-sql: false
+  thymeleaf:
+    cache: true
+
+server:
+  # 位于宝塔 Nginx 反向代理之后，信任 X-Forwarded-* 头以正确识别 https / 客户端 IP
+  forward-headers-strategy: framework
+
+medislot:
+  seed:
+    enabled: false
+
+logging:
+  level:
+    com.medislot: INFO
+    root: INFO

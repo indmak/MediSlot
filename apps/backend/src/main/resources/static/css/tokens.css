@@ -1,0 +1,46 @@
+/* tokens.css — 设计变量：颜色、间距、圆角、字体 */
+:root {
+    /* 主色：低饱和医疗蓝 */
+    --medislot-primary: #3B5BA5;
+    --medislot-primary-hover: #2E4A8A;
+    --medislot-primary-subtle: #E8EDF5;
+    --medislot-primary-border: #C5D1E8;
+
+    /* 状态色 */
+    --medislot-success: #2D7D5A;
+    --medislot-success-subtle: #E8F5EE;
+    --medislot-warning: #B8860B;
+    --medislot-warning-subtle: #FDF6E3;
+    --medislot-danger: #B5423E;
+    --medislot-danger-subtle: #F5F0F0;
+    --medislot-danger-border: #E8C5C4;
+
+    /* 中性色 */
+    --medislot-bg: #FAFBFC;
+    --medislot-surface: #FFFFFF;
+    --medislot-border: #E5E8EC;
+    --medislot-text-primary: #1A1D21;
+    --medislot-text-secondary: #6B7280;
+    --medislot-text-muted: #9CA3AF;
+
+    /* 字体 */
+    --medislot-font-sans: 'Inter', -apple-system, BlinkMacSystemFont,
+        'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+    /* 间距 */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 64px;
+
+    /* 圆角 */
+    --radius-card: 16px;
+    --radius-input: 10px;
+    --radius-button: 10px;
+    --radius-badge: 6px;
+    --radius-avatar: 50%;
+}

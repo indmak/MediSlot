@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('注册')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper content-wrapper--narrow">
+    <div class="card auth-card">
+        <header class="page-header">
+            <h1 class="page-title">注册</h1>
+            <p class="page-subtitle">创建患者账号，开始预约挂号</p>
+        </header>
+
+        <form th:action="@{/register}" method="post">
+            <div class="mb-3">
+                <label class="form-label" for="phone">手机号</label>
+                <input class="form-control" id="phone" name="phone" type="text"
+                       placeholder="请输入手机号" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="name">姓名</label>
+                <input class="form-control" id="name" name="name" type="text"
+                       placeholder="请输入姓名" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label" for="password">密码</label>
+                <input class="form-control" id="password" name="password" type="password"
+                       placeholder="请设置密码" required>
+            </div>
+            <button class="btn btn-primary w-100" type="submit">注册</button>
+        </form>
+
+        <p class="auth-alt">已有账号？<a th:href="@{/login}">去登录</a></p>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

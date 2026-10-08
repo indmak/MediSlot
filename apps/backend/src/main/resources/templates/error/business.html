@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('操作失败')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper content-wrapper--narrow">
+    <div class="card message-card">
+        <i class="bi bi-exclamation-circle message-card__icon"></i>
+        <h1 class="message-card__title">操作未能完成</h1>
+        <p class="message-card__text" th:text="${message}">号源已约满</p>
+        <div class="form-actions form-actions--center">
+            <a class="btn btn-outline-primary" th:href="@{/}">返回首页</a>
+            <a class="btn btn-primary" th:href="@{/doctors}">继续找医生</a>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

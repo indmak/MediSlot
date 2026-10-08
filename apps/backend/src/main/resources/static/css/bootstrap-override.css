@@ -1,0 +1,148 @@
+/* bootstrap-override.css — 覆盖 Bootstrap 默认变量与组件 */
+
+/* 主题色覆盖（必须同时覆盖 -rgb，否则 rgba() 工具类回退默认蓝） */
+:root {
+    --bs-primary: #3B5BA5;
+    --bs-primary-rgb: 59, 91, 165;
+    --bs-primary-bg-subtle: #E8EDF5;
+    --bs-primary-border-subtle: #C5D1E8;
+    --bs-body-bg: #FAFBFC;
+    --bs-body-color: #1A1D21;
+    --bs-border-color: #E5E8EC;
+}
+
+/* 顶部导航：纯白 + 细边框 + 无阴影 */
+.ms-nav {
+    background: var(--medislot-surface);
+    border-bottom: 1px solid var(--medislot-border);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.ms-nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    height: 56px;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.ms-brand {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--medislot-primary);
+    letter-spacing: -0.01em;
+}
+
+.ms-nav__links {
+    display: flex;
+    gap: var(--space-5);
+    margin-left: var(--space-5);
+    margin-right: auto;
+}
+
+.ms-nav__links a {
+    font-size: 14px;
+    color: var(--medislot-text-secondary);
+}
+
+.ms-nav__links a:hover {
+    color: var(--medislot-primary);
+}
+
+.ms-nav__account {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.ms-user {
+    font-size: 13px;
+    color: var(--medislot-text-secondary);
+}
+
+/* 按钮 */
+.btn-primary {
+    --bs-btn-bg: var(--medislot-primary);
+    --bs-btn-border-color: var(--medislot-primary);
+    --bs-btn-hover-bg: var(--medislot-primary-hover);
+    --bs-btn-hover-border-color: var(--medislot-primary-hover);
+    --bs-btn-active-bg: var(--medislot-primary-hover);
+    --bs-btn-active-border-color: var(--medislot-primary-hover);
+    --bs-btn-focus-shadow-rgb: 59, 91, 165;
+    border-radius: var(--radius-button);
+    padding: 10px 20px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--medislot-primary);
+    --bs-btn-border-color: var(--medislot-primary-border);
+    --bs-btn-hover-bg: var(--medislot-primary-subtle);
+    --bs-btn-hover-border-color: var(--medislot-primary-border);
+    --bs-btn-hover-color: var(--medislot-primary);
+    --bs-btn-active-bg: var(--medislot-primary-subtle);
+    border-radius: var(--radius-button);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.btn-link {
+    --bs-btn-color: var(--medislot-text-secondary);
+    font-size: 14px;
+    text-decoration: none;
+}
+
+/* 表单 */
+.form-control {
+    border: 1px solid var(--medislot-border);
+    border-radius: var(--radius-input);
+    padding: 10px 14px;
+    font-size: 15px;
+    background: var(--medislot-surface);
+    transition: border-color 0.15s ease;
+}
+
+.form-control:focus {
+    border-color: var(--medislot-primary);
+    box-shadow: 0 0 0 3px rgba(59, 91, 165, 0.12);
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--medislot-text-secondary);
+    margin-bottom: var(--space-1);
+}
+
+/* 卡片：细边框代替阴影 */
+.card {
+    border: 1px solid var(--medislot-border);
+    border-radius: var(--radius-card);
+    box-shadow: none;
+    background: var(--medislot-surface);
+}
+
+/* 提示 */
+.alert {
+    border-radius: var(--radius-input);
+    border: 1px solid var(--medislot-border);
+    font-size: 14px;
+    padding: var(--space-3) var(--space-4);
+}
+
+.alert-danger {
+    background: var(--medislot-danger-subtle);
+    color: var(--medislot-danger);
+    border-color: var(--medislot-danger-border);
+}
+
+.alert-success {
+    background: var(--medislot-success-subtle);
+    color: var(--medislot-success);
+    border-color: #cfe8dc;
+}

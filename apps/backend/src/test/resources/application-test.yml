@@ -1,0 +1,21 @@
+# ===== 测试环境（H2 内存库，无需 MySQL） =====
+spring:
+  datasource:
+    url: jdbc:h2:mem:medislot;MODE=MySQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER,DATE,TIME,VALUE,KEY
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  thymeleaf:
+    cache: false
+
+medislot:
+  seed:
+    enabled: false
+
+logging:
+  level:
+    com.medislot: INFO

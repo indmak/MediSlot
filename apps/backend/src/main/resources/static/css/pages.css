@@ -1,0 +1,142 @@
+/* pages.css — 页面级微调 */
+
+/* 预约确认页 / 成功页 */
+.summary-card {
+    padding: var(--space-5);
+    margin-bottom: var(--space-4);
+}
+
+.summary-line {
+    margin: var(--space-2) 0;
+    font-size: 14px;
+    color: var(--medislot-text-secondary);
+}
+
+.form-card {
+    padding: var(--space-5);
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+}
+
+.form-actions--center {
+    justify-content: center;
+}
+
+/* 成功页 */
+.success-card,
+.message-card {
+    padding: var(--space-7) var(--space-6);
+    text-align: center;
+}
+
+.success-card__icon {
+    font-size: 56px;
+    color: var(--medislot-success);
+}
+
+.success-card__title {
+    margin: var(--space-4) 0 var(--space-2);
+    font-size: 28px;
+}
+
+.success-card__no {
+    margin: 0 0 var(--space-5);
+    font-size: 13px;
+    color: var(--medislot-text-secondary);
+}
+
+.success-detail {
+    text-align: left;
+    margin: var(--space-5) 0 var(--space-6);
+    border-top: 1px solid var(--medislot-border);
+}
+
+.success-detail > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--medislot-border);
+}
+
+.success-detail dt {
+    font-size: 13px;
+    color: var(--medislot-text-secondary);
+    font-weight: 400;
+}
+
+.success-detail dd {
+    margin: 0;
+    font-size: 14px;
+    text-align: right;
+}
+
+/* 登录 / 注册 */
+.auth-card {
+    padding: var(--space-6);
+}
+
+.auth-alt {
+    margin: var(--space-5) 0 0;
+    font-size: 13px;
+    color: var(--medislot-text-secondary);
+    text-align: center;
+}
+
+.message-card__icon {
+    font-size: 48px;
+    color: var(--medislot-primary);
+}
+
+.message-card__title {
+    margin: var(--space-4) 0 var(--space-2);
+    font-size: 24px;
+}
+
+.message-card__text {
+    color: var(--medislot-text-secondary);
+    margin-bottom: var(--space-5);
+}
+
+/* 手机端：导航精简、卡片单列、按钮全宽（提交场景） */
+@media (max-width: 575.98px) {
+    .content-wrapper {
+        padding: var(--space-5) var(--space-4);
+    }
+
+    .ms-nav__links {
+        gap: var(--space-4);
+    }
+
+    .appt-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .appt-card__actions,
+    .appt-card__actions form {
+        width: 100%;
+    }
+
+    .complete-form {
+        width: 100%;
+    }
+
+    .complete-form .form-control {
+        width: 100%;
+        flex: 1;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+}

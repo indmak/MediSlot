@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Docker 构建阶段使用的 Maven 配置。
+  默认走阿里云公共仓库，避免国内服务器拉取 Maven Central 缓慢/超时。
+  如需改用公司私服或本地代理，请自行调整 <mirror>。
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+    <mirrors>
+        <mirror>
+            <id>aliyun-public</id>
+            <name>Aliyun Public Repository</name>
+            <mirrorOf>*</mirrorOf>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </mirror>
+    </mirrors>
+</settings>

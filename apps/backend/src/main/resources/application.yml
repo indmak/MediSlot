@@ -1,0 +1,30 @@
+# ===== 公共配置（所有 profile 共享） =====
+spring:
+  application:
+    name: medislot
+  profiles:
+    # 未显式指定 profile 时默认走 dev（本地开发）
+    default: dev
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: true
+  thymeleaf:
+    cache: true
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+  web:
+    locale: zh_CN
+    locale-resolver: fixed
+
+server:
+  port: 8080
+  error:
+    whitelabel:
+      enabled: false
+
+logging:
+  level:
+    com.medislot: INFO

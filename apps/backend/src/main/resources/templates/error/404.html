@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('页面不存在')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper content-wrapper--narrow">
+    <div class="card message-card">
+        <i class="bi bi-compass message-card__icon"></i>
+        <h1 class="message-card__title">404 · 页面不存在</h1>
+        <p class="message-card__text">你访问的页面走丢了。</p>
+        <div class="form-actions form-actions--center">
+            <a class="btn btn-primary" th:href="@{/}">返回首页</a>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

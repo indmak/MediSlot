@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('医生详情')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <a class="back-link" th:href="@{/doctors}"><i class="bi bi-arrow-left"></i> 返回医生列表</a>
+
+    <section class="card doctor-summary">
+        <div class="doctor-card__top">
+            <div class="doctor-avatar doctor-avatar--lg">
+                <img th:if="${doctor.avatarUrl != null}" th:src="${doctor.avatarUrl}" alt="">
+                <span th:unless="${doctor.avatarUrl != null}"
+                      th:text="${#strings.substring(doctor.name, 0, 1)}">张</span>
+            </div>
+            <div>
+                <div class="doctor-name" th:text="${doctor.name}">张明华</div>
+                <div class="doctor-meta">
+                    <span th:text="${doctor.title}">副主任医师</span>
+                    <span class="dot">·</span>
+                    <span th:text="${doctor.departmentName}">心血管内科</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <header class="page-header">
+        <h2 class="section-title">未来 7 天出诊时段</h2>
+        <p class="page-subtitle">选择一个还有余号的时段</p>
+    </header>
+
+    <div class="day-nav">
+        <a class="dept-pill" th:each="day : ${days}"
+           th:href="'#day-' + ${#temporals.format(day.date, 'yyyyMMdd')}"
+           th:text="${#temporals.format(day.date, 'M月d日 EEE')}">10月15日 周三</a>
+    </div>
+
+    <section class="day-block" th:each="day : ${days}"
+             th:id="'day-' + ${#temporals.format(day.date, 'yyyyMMdd')}">
+        <h3 class="day-block__title" th:text="${#temporals.format(day.date, 'M月d日 EEEE')}">10月15日 星期三</h3>
+
+        <div th:if="${day.morning.size() > 0}">
+            <div class="period-label">上午</div>
+            <div class="slot-list">
+                <th:block th:each="s : ${day.morning}">
+                    <a class="slot" th:if="${s.available}" th:href="@{/appointments/new(scheduleId=${s.id})}">
+                        <span class="slot__time"
+                              th:text="${#temporals.format(s.startTime,'HH:mm')} + ' - ' + ${#temporals.format(s.endTime,'HH:mm')}">09:00 - 09:30</span>
+                        <span class="badge-status badge-available" th:text="${'剩余 ' + s.remaining}">剩余 3</span>
+                    </a>
+                    <div class="slot slot--full" th:unless="${s.available}">
+                        <span class="slot__time"
+                              th:text="${#temporals.format(s.startTime,'HH:mm')} + ' - ' + ${#temporals.format(s.endTime,'HH:mm')}">09:00 - 09:30</span>
+                        <span class="badge-status badge-full">已约满</span>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+
+        <div th:if="${day.afternoon.size() > 0}">
+            <div class="period-label">下午</div>
+            <div class="slot-list">
+                <th:block th:each="s : ${day.afternoon}">
+                    <a class="slot" th:if="${s.available}" th:href="@{/appointments/new(scheduleId=${s.id})}">
+                        <span class="slot__time"
+                              th:text="${#temporals.format(s.startTime,'HH:mm')} + ' - ' + ${#temporals.format(s.endTime,'HH:mm')}">14:00 - 14:30</span>
+                        <span class="badge-status badge-available" th:text="${'剩余 ' + s.remaining}">剩余 3</span>
+                    </a>
+                    <div class="slot slot--full" th:unless="${s.available}">
+                        <span class="slot__time"
+                              th:text="${#temporals.format(s.startTime,'HH:mm')} + ' - ' + ${#temporals.format(s.endTime,'HH:mm')}">14:00 - 14:30</span>
+                        <span class="badge-status badge-full">已约满</span>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

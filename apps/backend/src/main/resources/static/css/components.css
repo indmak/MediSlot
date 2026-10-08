@@ -1,0 +1,328 @@
+/* components.css — 自定义组件：医生卡片、时段、状态标签、分段控制器…… */
+
+.dot {
+    margin: 0 6px;
+    color: var(--medislot-text-muted);
+}
+
+/* 医生卡片 */
+.doctor-card {
+    display: block;
+    height: 100%;
+    background: var(--medislot-surface);
+    border: 1px solid var(--medislot-border);
+    border-radius: var(--radius-card);
+    padding: var(--space-5);
+    color: inherit;
+    transition: border-color 0.15s ease;
+}
+
+.doctor-card:hover {
+    border-color: var(--medislot-primary);
+    color: inherit;
+}
+
+.doctor-card__top {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.doctor-card__stats {
+    font-size: 13px;
+    color: var(--medislot-text-secondary);
+    margin-bottom: var(--space-4);
+}
+
+.doctor-card__footer {
+    min-height: 28px;
+}
+
+.doctor-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-avatar);
+    background: var(--medislot-primary-subtle);
+    color: var(--medislot-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 18px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.doctor-avatar--lg {
+    width: 64px;
+    height: 64px;
+    font-size: 24px;
+}
+
+.doctor-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.doctor-name {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.doctor-meta {
+    font-size: 13px;
+    color: var(--medislot-text-secondary);
+}
+
+/* 状态 / 徽章 */
+.badge-status {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 3px 10px;
+    border-radius: var(--radius-badge);
+}
+
+.badge-available {
+    background: var(--medislot-primary-subtle);
+    color: var(--medislot-primary);
+}
+
+.badge-full {
+    background: #F3F4F6;
+    color: var(--medislot-text-muted);
+}
+
+.badge-pending {
+    background: var(--medislot-warning-subtle);
+    color: var(--medislot-warning);
+}
+
+.badge-checked {
+    background: var(--medislot-primary-subtle);
+    color: var(--medislot-primary);
+}
+
+.badge-completed {
+    background: var(--medislot-success-subtle);
+    color: var(--medislot-success);
+}
+
+.badge-cancelled {
+    background: var(--medislot-danger-subtle);
+    color: var(--medislot-danger);
+}
+
+/* 科室 / 日期 pill */
+.dept-filter,
+.day-nav {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-5);
+}
+
+.dept-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 6px 16px;
+    border: 1px solid var(--medislot-border);
+    border-radius: 999px;
+    background: var(--medislot-surface);
+    color: var(--medislot-text-secondary);
+    font-size: 14px;
+}
+
+.dept-pill:hover {
+    border-color: var(--medislot-primary-border);
+    color: var(--medislot-primary);
+}
+
+.dept-pill.active {
+    background: var(--medislot-primary);
+    border-color: var(--medislot-primary);
+    color: #fff;
+}
+
+/* 排班选择 */
+.day-block {
+    margin-bottom: var(--space-6);
+    scroll-margin-top: 76px;
+}
+
+.day-block__title {
+    font-size: 20px;
+    font-weight: 600;
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--medislot-border);
+    margin-bottom: var(--space-4);
+}
+
+.period-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--medislot-text-secondary);
+    margin: var(--space-3) 0 var(--space-2);
+}
+
+.slot-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.slot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    padding: 10px var(--space-4);
+    border: 1px solid var(--medislot-border);
+    border-radius: var(--radius-input);
+    background: var(--medislot-surface);
+    color: inherit;
+    transition: border-color 0.15s ease;
+}
+
+.slot:hover {
+    border-color: var(--medislot-primary);
+    color: inherit;
+}
+
+.slot--full {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.slot__time {
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 预约卡片 */
+.appt-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.appt-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-5);
+}
+
+.appt-card__time {
+    min-width: 118px;
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.appt-card__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.appt-card__name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.appt-card__meta {
+    font-size: 13px;
+    color: var(--medislot-text-secondary);
+    margin-top: 2px;
+}
+
+.appt-card__no {
+    font-size: 13px;
+    color: var(--medislot-text-muted);
+    margin-top: 2px;
+}
+
+.appt-card__actions form {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.complete-form .form-control {
+    width: 160px;
+}
+
+/* 分段控制器 */
+.segmented {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    background: #EEF0F3;
+    border-radius: var(--radius-input);
+    margin-bottom: var(--space-5);
+}
+
+.segmented .nav-link {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 14px;
+    color: var(--medislot-text-secondary);
+    background: transparent;
+}
+
+.segmented .nav-link.active {
+    background: var(--medislot-surface);
+    color: var(--medislot-primary);
+    font-weight: 500;
+}
+
+.segmented__count {
+    font-size: 12px;
+    color: var(--medislot-text-muted);
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: var(--space-8) var(--space-5);
+}
+
+.empty-state__icon {
+    font-size: 32px;
+    color: var(--medislot-text-muted);
+}
+
+.empty-state__title {
+    margin: var(--space-3) 0 var(--space-1);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.empty-state__hint {
+    margin: 0 0 var(--space-4);
+    font-size: 13px;
+    color: var(--medislot-text-secondary);
+}
+
+/* 危险操作：文字/描边按钮 */
+.btn-danger-outline {
+    color: var(--medislot-danger);
+    background: transparent;
+    border: 1px solid var(--medislot-danger-border);
+    border-radius: var(--radius-button);
+    font-size: 14px;
+    padding: 6px 14px;
+}
+
+.btn-danger-outline:hover {
+    background: var(--medislot-danger-subtle);
+    color: var(--medislot-danger);
+}

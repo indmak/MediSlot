@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('选择医生')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title">选择医生</h1>
+        <p class="page-subtitle">共 <span th:text="${doctorCount}">5</span> 位医生可预约</p>
+    </header>
+
+    <nav class="dept-filter" aria-label="科室筛选">
+        <a class="dept-pill" th:classappend="${currentDeptId == null ? 'active' : ''}" th:href="@{/doctors}">全部</a>
+        <a class="dept-pill" th:each="dept : ${departments}"
+           th:classappend="${dept.id == currentDeptId ? 'active' : ''}"
+           th:href="@{/doctors(dept=${dept.id})}"
+           th:text="${dept.name}">内科</a>
+    </nav>
+
+    <div th:replace="~{layout :: doctorGrid(${doctors})}"></div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>
