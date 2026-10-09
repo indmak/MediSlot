@@ -49,8 +49,8 @@
     </div>
 </nav>
 
-<!-- 管理后台子导航（整宽二级导航条） -->
-<nav th:fragment="adminNav(active)" class="admin-nav" aria-label="管理后台导航">
+<!-- 管理后台子导航（整宽二级导航条）。用 div 而非 nav：~{layout :: nav} 是按标签名匹配，若此处也用 nav 会导致主导航把子导航一并渲染（重复） -->
+<div th:fragment="adminNav(active)" class="admin-nav" role="navigation" aria-label="管理后台导航">
     <div class="content-wrapper admin-nav__inner">
         <th:block sec:authorize="hasRole('ADMIN')">
             <a th:href="@{/admin}" th:classappend="${active == 'dashboard' ? 'active' : ''}">仪表盘</a>
@@ -65,7 +65,7 @@
             <a th:href="@{/admin/settings}" th:classappend="${active == 'settings' ? 'active' : ''}">设置</a>
         </th:block>
     </div>
-</nav>
+</div>
 
 <!-- 医生卡片网格（首页 / 医生列表共用） -->
 <div th:fragment="doctorGrid(doctors)" class="row g-3">
