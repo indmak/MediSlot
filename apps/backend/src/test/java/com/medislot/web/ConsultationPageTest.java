@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -40,6 +41,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -110,7 +112,7 @@ class ConsultationPageTest {
         appointmentId = appointment.getId();
         group = consultationService.getOrCreateGroup(appointment.getId());
         privateCase = consultationService.getOrCreateDoctorPrivate(appointment.getId());
-        consultationService.postPatientMessage(group.getId(), patient, "头痛两天了");
+        consultationService.postPatientMessage(group.getId(), patient, "头痛两天了", null);
     }
 
     @Test
@@ -197,5 +199,18 @@ class ConsultationPageTest {
                 .andExpect(status().is3xxRedirection());
 
         assertThat(symptomIntakeService.findByAppointmentId(appointmentId)).isPresent();
+    }
+
+    @Test
+    void uploadAttachmentEndpoint() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "a.png", "image/png", new byte[]{1, 2, 3});
+        mockMvc.perform(multipart("/attachments")
+                        .file(file)
+                        .param("conversationId", String.valueOf(group.getId()))
+                        .with(user(patientPhone).roles("PATIENT"))
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ok").value(true))
+                .andExpect(jsonPath("$.isImage").value(true));
     }
 }

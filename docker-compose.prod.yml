@@ -65,6 +65,7 @@ services:
       TZ: Asia/Shanghai
     volumes:
       - ./secrets:/run/secrets:ro
+      - ./data/uploads:/app/uploads
     ports:
       # 仅绑定回环地址，交给宝塔 Nginx 反向代理（避免直接暴露 8080）
       - "127.0.0.1:${APP_PORT:-8080}:8080"

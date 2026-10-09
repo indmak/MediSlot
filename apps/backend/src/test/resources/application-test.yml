@@ -15,6 +15,8 @@ spring:
 medislot:
   seed:
     enabled: false
+  upload:
+    dir: ${java.io.tmpdir}/medislot-test-uploads
 
 logging:
   level:

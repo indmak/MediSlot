@@ -1,4 +1,4 @@
-/* 诊前咨询 / 病例研究：SSE 流式发送 + 轮询新消息（无框架） */
+/* 诊前咨询 / 病例研究：SSE 流式发送 + 轮询新消息 + 附件上传（无框架） */
 (function () {
     var container = document.getElementById('chatMessages');
     if (!container) {
@@ -17,6 +17,8 @@
     var typing = document.getElementById('chatTyping');
     var empty = document.getElementById('chatEmpty');
     var errorBox = document.getElementById('chatError');
+    var fileInput = document.getElementById('chatFile');
+    var fileName = document.getElementById('chatFileName');
     var lastId = Number(container.dataset.lastId || 0);
     var polling = false;
     var streaming = false;
@@ -38,6 +40,36 @@
         if (status === 'REJECTED') return 'badge-cancelled';
         if (status === 'ADJUSTED') return 'badge-checked';
         return 'badge-pending';
+    }
+
+    function renderAttachments(list) {
+        if (!list || !list.length) return null;
+        var box = document.createElement('div');
+        box.className = 'chat-attachments';
+        list.forEach(function (a) {
+            if (a.isImage) {
+                var link = document.createElement('a');
+                link.className = 'chat-attachment-img-link';
+                link.href = a.url;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                var img = document.createElement('img');
+                img.className = 'chat-attachment-img';
+                img.src = a.url;
+                img.alt = a.name || '';
+                link.appendChild(img);
+                box.appendChild(link);
+            } else {
+                var f = document.createElement('a');
+                f.className = 'chat-attachment-file';
+                f.href = a.url;
+                f.target = '_blank';
+                f.rel = 'noopener';
+                f.textContent = '📎 ' + (a.name || '文件');
+                box.appendChild(f);
+            }
+        });
+        return box;
     }
 
     function renderMessage(m) {
@@ -76,12 +108,15 @@
                 draft.appendChild(form);
             }
             wrap.appendChild(draft);
-        } else {
+        } else if (m.content) {
             var body = document.createElement('div');
             body.className = 'chat-msg__body';
             body.textContent = m.content;
             wrap.appendChild(body);
         }
+
+        var att = renderAttachments(m.attachments);
+        if (att) wrap.appendChild(att);
         return wrap;
     }
 
@@ -89,30 +124,21 @@
         window.scrollTo(0, document.body.scrollHeight);
     }
 
-    function showTyping() {
-        if (typing) typing.style.display = 'block';
-    }
-
-    function hideTyping() {
-        if (typing) typing.style.display = 'none';
-    }
+    function showTyping() { if (typing) typing.style.display = 'block'; }
+    function hideTyping() { if (typing) typing.style.display = 'none'; }
 
     function showError(msg) {
         if (!errorBox) return;
         errorBox.textContent = msg;
         errorBox.style.display = 'block';
-        window.setTimeout(function () {
-            errorBox.style.display = 'none';
-        }, 4000);
+        window.setTimeout(function () { errorBox.style.display = 'none'; }, 4000);
     }
 
     function poll() {
         if (polling || streaming) return;
         polling = true;
         fetch(endpoint + '/' + convId + '/messages.json?after=' + lastId, {headers: {'Accept': 'application/json'}})
-            .then(function (res) {
-                return res.ok ? res.json() : [];
-            })
+            .then(function (res) { return res.ok ? res.json() : []; })
             .then(function (list) {
                 if (list && list.length) {
                     list.forEach(function (m) {
@@ -142,11 +168,7 @@
 
     function handleEvent(evt, data, ctx) {
         var obj;
-        try {
-            obj = JSON.parse(data);
-        } catch (e) {
-            return;
-        }
+        try { obj = JSON.parse(data); } catch (e) { return; }
         if (evt === 'start') {
             if (obj.humanMessageId && obj.humanMessageId > lastId) lastId = obj.humanMessageId;
         } else if (evt === 'delta') {
@@ -168,77 +190,109 @@
         }
     }
 
+    function uploadAttachment(file) {
+        var fd = new FormData();
+        fd.append('file', file);
+        fd.append('conversationId', convId);
+        var headers = {'Accept': 'application/json'};
+        headers[csrfHeader] = csrf;
+        return fetch('/attachments', {method: 'POST', headers: headers, body: fd}).then(function (res) {
+            return res.json();
+        });
+    }
+
+    if (fileInput && fileName) {
+        fileInput.addEventListener('change', function () {
+            fileName.textContent = (fileInput.files && fileInput.files[0]) ? fileInput.files[0].name : '';
+        });
+    }
+
     var form = document.getElementById('chatForm');
     if (form) {
         var textarea = form.querySelector('textarea');
         form.addEventListener('submit', function (e) {
             e.preventDefault();
-            var content = textarea.value.trim();
-            if (!content) return;
             var action = (e.submitter && e.submitter.value) ? e.submitter.value : 'chat';
+            var content = textarea.value.trim();
+            var file = (fileInput && fileInput.files && fileInput.files[0]) ? fileInput.files[0] : null;
+            if (!content && !file) return;
             textarea.value = '';
+            if (fileInput) fileInput.value = '';
+            if (fileName) fileName.textContent = '';
 
-            // 乐观渲染自己的消息
-            container.appendChild(renderMessage({
-                id: 'tmp-' + Date.now(),
-                senderType: SELF,
-                senderLabel: SELF === 'DOCTOR' ? '医生' : '患者',
-                messageType: (SELF === 'DOCTOR' && action === 'directive') ? 'DIRECTIVE' : 'CHAT',
-                content: content,
-                reviewStatus: null, reviewStatusLabel: null, reviewNote: null,
-                time: nowTime()
-            }));
-            if (empty) empty.style.display = 'none';
-            scrollToBottom();
             showTyping();
             streaming = true;
 
             var ctx = {aiText: '', bubble: null, aiMessageId: null, error: null};
-            var headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'text/event-stream'};
-            headers[csrfHeader] = csrf;
 
-            fetch(endpoint + '/' + convId + '/messages/stream', {
-                method: 'POST',
-                headers: headers,
-                body: new URLSearchParams({content: content, action: action})
-            }).then(function (res) {
-                if (!res.ok || !res.body) {
-                    throw new Error('bad');
-                }
-                var reader = res.body.getReader();
-                var decoder = new TextDecoder();
-                var buffer = '';
+            (function () {
+                var attachment = null;
+                var prep = file
+                    ? uploadAttachment(file).then(function (up) {
+                        if (!up.ok) {
+                            throw new Error(up.error || '附件上传失败');
+                        }
+                        attachment = {id: up.id, url: up.url, name: up.name, isImage: up.isImage};
+                    })
+                    : Promise.resolve();
 
-                function pump() {
-                    return reader.read().then(function (r) {
-                        if (r.done) return;
-                        buffer += decoder.decode(r.value, {stream: true});
-                        var blocks = buffer.split('\n\n');
-                        buffer = blocks.pop();
-                        blocks.forEach(function (block) {
-                            var evt = 'message', data = '';
-                            block.split('\n').forEach(function (line) {
-                                if (line.indexOf('event:') === 0) evt = line.slice(6).trim();
-                                else if (line.indexOf('data:') === 0) data += line.slice(5).trim();
+                return prep.then(function () {
+                    container.appendChild(renderMessage({
+                        id: 'tmp-' + Date.now(),
+                        senderType: SELF,
+                        senderLabel: SELF === 'DOCTOR' ? '医生' : '患者',
+                        messageType: (SELF === 'DOCTOR' && action === 'directive') ? 'DIRECTIVE' : 'CHAT',
+                        content: content,
+                        reviewStatus: null, reviewStatusLabel: null, reviewNote: null,
+                        time: nowTime(),
+                        attachments: attachment ? [attachment] : []
+                    }));
+                    if (empty) empty.style.display = 'none';
+                    scrollToBottom();
+
+                    var body = new URLSearchParams({content: content, action: action});
+                    if (attachment) body.append('attachmentId', attachment.id);
+                    var headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'text/event-stream'};
+                    headers[csrfHeader] = csrf;
+
+                    return fetch(endpoint + '/' + convId + '/messages/stream', {
+                        method: 'POST', headers: headers, body: body
+                    }).then(function (res) {
+                        if (!res.ok || !res.body) throw new Error('bad');
+                        var reader = res.body.getReader();
+                        var decoder = new TextDecoder();
+                        var buffer = '';
+                        function pump() {
+                            return reader.read().then(function (r) {
+                                if (r.done) return;
+                                buffer += decoder.decode(r.value, {stream: true});
+                                var blocks = buffer.split('\n\n');
+                                buffer = blocks.pop();
+                                blocks.forEach(function (block) {
+                                    var evt = 'message', data = '';
+                                    block.split('\n').forEach(function (line) {
+                                        if (line.indexOf('event:') === 0) evt = line.slice(6).trim();
+                                        else if (line.indexOf('data:') === 0) data += line.slice(5).trim();
+                                    });
+                                    if (data) handleEvent(evt, data, ctx);
+                                });
+                                return pump();
                             });
-                            if (data) handleEvent(evt, data, ctx);
-                        });
+                        }
                         return pump();
                     });
-                }
-                return pump();
-            }).catch(function () {
-                ctx.error = ctx.error || '发送失败';
+                });
+            })().catch(function (err) {
+                ctx.error = ctx.error || (err && err.message ? err.message : '发送失败');
             }).finally(function () {
                 streaming = false;
                 hideTyping();
-                // 医生指令：流式完成后替换为草稿卡（带核实按钮）
                 if (action === 'directive' && ctx.bubble && ctx.aiMessageId) {
                     var draft = renderMessage({
                         id: ctx.aiMessageId,
                         senderType: 'AI', senderLabel: 'AI 助手', messageType: 'DRAFT',
                         content: ctx.aiText, reviewStatus: 'PENDING', reviewStatusLabel: '待核实',
-                        reviewNote: null, time: nowTime()
+                        reviewNote: null, time: nowTime(), attachments: []
                     });
                     ctx.bubble.replaceWith(draft);
                 }

@@ -46,6 +46,7 @@ public class ConsultationService {
     private final AppointmentRepository appointmentRepository;
     private final SettingService settingService;
     private final SymptomIntakeService symptomIntakeService;
+    private final AttachmentService attachmentService;
     private final AiChatClient aiChatClient;
 
     public ConsultationService(ConversationRepository conversationRepository,
@@ -53,12 +54,14 @@ public class ConsultationService {
                                AppointmentRepository appointmentRepository,
                                SettingService settingService,
                                SymptomIntakeService symptomIntakeService,
+                               AttachmentService attachmentService,
                                AiChatClient aiChatClient) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.appointmentRepository = appointmentRepository;
         this.settingService = settingService;
         this.symptomIntakeService = symptomIntakeService;
+        this.attachmentService = attachmentService;
         this.aiChatClient = aiChatClient;
     }
 
@@ -120,23 +123,23 @@ public class ConsultationService {
     // ==================== 群聊 ====================
 
     @Transactional
-    public void postPatientMessage(Long conversationId, User patient, String content) {
+    public void postPatientMessage(Long conversationId, User patient, String content, Long attachmentId) {
         Conversation conversation = getRequired(conversationId);
         assertGroupPatient(conversation, patient);
         ensureActive(conversation);
         ensureEnabled();
         enforceRateLimit(conversation);
         enforceMaxMessages(conversation);
-        saveMessage(conversation, SenderType.PATIENT, patient.getId(), MessageType.CHAT, content);
+        saveHumanMessage(conversation, SenderType.PATIENT, patient.getId(), MessageType.CHAT, content, attachmentId, patient);
         aiReplyToPatient(conversation);
     }
 
     @Transactional
-    public void postDoctorGroupMessage(Long conversationId, User doctor, String content, MessageType type) {
+    public void postDoctorGroupMessage(Long conversationId, User doctor, String content, MessageType type, Long attachmentId) {
         Conversation conversation = getRequired(conversationId);
         assertGroupDoctor(conversation, doctor);
         ensureActive(conversation);
-        ConversationMessage saved = saveMessage(conversation, SenderType.DOCTOR, doctor.getId(), type, content);
+        ConversationMessage saved = saveHumanMessage(conversation, SenderType.DOCTOR, doctor.getId(), type, content, attachmentId, doctor);
         if (type == MessageType.DIRECTIVE) {
             aiProduceDraft(conversation, saved);
         }
@@ -193,12 +196,12 @@ public class ConsultationService {
     // ==================== 医生病例研究（私有） ====================
 
     @Transactional
-    public void postCaseMessage(Long conversationId, User doctor, String content) {
+    public void postCaseMessage(Long conversationId, User doctor, String content, Long attachmentId) {
         Conversation conversation = getRequired(conversationId);
         assertPrivateDoctor(conversation, doctor);
         ensureActive(conversation);
         ensureEnabled();
-        saveMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.CHAT, content);
+        saveHumanMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.CHAT, content, attachmentId, doctor);
         aiReplyPrivate(conversation);
     }
 
@@ -206,27 +209,30 @@ public class ConsultationService {
 
     /** 患者发言：落库并构建 AI 回复 prompt（不在此调用 AI）。 */
     @Transactional
-    public AiRequest preparePatientMessage(Long conversationId, User patient, String content) {
+    public AiRequest preparePatientMessage(Long conversationId, User patient, String content, Long attachmentId) {
         Conversation conversation = getRequired(conversationId);
         assertGroupPatient(conversation, patient);
         ensureActive(conversation);
         ensureEnabled();
         enforceRateLimit(conversation);
         enforceMaxMessages(conversation);
-        ConversationMessage message = saveMessage(conversation, SenderType.PATIENT, patient.getId(), MessageType.CHAT, content);
+        ConversationMessage message = saveHumanMessage(conversation, SenderType.PATIENT, patient.getId(), MessageType.CHAT, content, attachmentId, patient);
         List<ChatMessage> prompt = new ArrayList<>();
         prompt.add(ChatMessage.system(groupSystemPrompt(conversation)));
         prompt.addAll(history(conversation, false));
+        if (attachmentId != null) {
+            prompt.add(ChatMessage.user("【患者上传了图片/文件】请结合其文字描述回应，如需更多信息请继续追问。"));
+        }
         return new AiRequest(message.getId(), prompt, MessageType.CHAT, null);
     }
 
     /** 医生指挥 AI：落库指令并构建草稿 prompt。 */
     @Transactional
-    public AiRequest prepareDoctorDirective(Long conversationId, User doctor, String content) {
+    public AiRequest prepareDoctorDirective(Long conversationId, User doctor, String content, Long attachmentId) {
         Conversation conversation = getRequired(conversationId);
         assertGroupDoctor(conversation, doctor);
         ensureActive(conversation);
-        ConversationMessage message = saveMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.DIRECTIVE, content);
+        ConversationMessage message = saveHumanMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.DIRECTIVE, content, attachmentId, doctor);
         List<ChatMessage> prompt = new ArrayList<>();
         prompt.add(ChatMessage.system(groupSystemPrompt(conversation)
                 + "\n\n【当前任务】医生要求你产出一份给患者看的方案草稿，请直接给出内容，不要寒暄。"));
@@ -237,12 +243,12 @@ public class ConsultationService {
 
     /** 医生病例研究发言：落库并构建 prompt。 */
     @Transactional
-    public AiRequest prepareCaseMessage(Long conversationId, User doctor, String content) {
+    public AiRequest prepareCaseMessage(Long conversationId, User doctor, String content, Long attachmentId) {
         Conversation conversation = getRequired(conversationId);
         assertPrivateDoctor(conversation, doctor);
         ensureActive(conversation);
         ensureEnabled();
-        ConversationMessage message = saveMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.CHAT, content);
+        ConversationMessage message = saveHumanMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.CHAT, content, attachmentId, doctor);
         List<ChatMessage> prompt = new ArrayList<>();
         prompt.add(ChatMessage.system(privateSystemPrompt()));
         prompt.addAll(history(conversation, true));
@@ -251,11 +257,11 @@ public class ConsultationService {
 
     /** 医生在群聊「回复患者」：只落库，不触发 AI。 */
     @Transactional
-    public Long postDoctorChat(Long conversationId, User doctor, String content) {
+    public Long postDoctorChat(Long conversationId, User doctor, String content, Long attachmentId) {
         Conversation conversation = getRequired(conversationId);
         assertGroupDoctor(conversation, doctor);
         ensureActive(conversation);
-        return saveMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.CHAT, content).getId();
+        return saveHumanMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.CHAT, content, attachmentId, doctor).getId();
     }
 
     /** 流式结束后落库 AI 消息，返回其 id。 */
@@ -360,6 +366,25 @@ public class ConsultationService {
         }
         ConversationMessage message = new ConversationMessage(conversation, senderType, senderId, messageType, text);
         return messageRepository.save(message);
+    }
+
+    /** 人类消息：允许「仅附件无文本」，并把附件关联到消息。 */
+    private ConversationMessage saveHumanMessage(Conversation conversation, SenderType senderType, Long senderId,
+                                                 MessageType messageType, String content,
+                                                 Long attachmentId, User user) {
+        String text = content == null ? "" : content.trim();
+        if (text.isEmpty() && attachmentId == null) {
+            throw new BusinessException("消息不能为空");
+        }
+        if (text.length() > MAX_CONTENT_LENGTH) {
+            text = text.substring(0, MAX_CONTENT_LENGTH);
+        }
+        ConversationMessage message = new ConversationMessage(conversation, senderType, senderId, messageType, text);
+        messageRepository.save(message);
+        if (attachmentId != null) {
+            attachmentService.link(attachmentId, message, user);
+        }
+        return message;
     }
 
     private void saveAiMessage(Conversation conversation, MessageType type, AiReply reply,

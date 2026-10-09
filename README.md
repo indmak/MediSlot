@@ -62,6 +62,7 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 - The doctor can generate an AI **consultation summary** and close the session.
 - The chat is **live**: the sender's message is sent over AJAX, the **AI reply streams in token by token (SSE)**, and the page polls for new messages every few seconds — no full-page reload, and the patient and doctor see each other's messages in near real time.
 - **Structured intake**: the patient can fill a structured symptom form (chief complaint, symptoms, duration, severity, temperature, history, red flags). It is injected into the AI's context and shown to the doctor as a summary card.
+- **Attachments**: patients and doctors can attach images (or PDFs, up to 5 MB) to a message; images render inline, other files as links. Files are stored on a mounted volume and served only to the conversation's participants.
 - Powered by the **DeepSeek** API (`deepseek-flash` by default, OpenAI-compatible). The API key is injected as a mounted secret, never in code or env vars. Without a key the app falls back to a built-in mock so the flow still works.
 
 ## Tech Stack

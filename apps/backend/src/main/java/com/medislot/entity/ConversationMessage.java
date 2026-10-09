@@ -10,10 +10,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 会话消息。
@@ -69,6 +72,9 @@ public class ConversationMessage {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "message", fetch = FetchType.EAGER)
+    private List<MessageAttachment> attachments = new ArrayList<>();
 
     protected ConversationMessage() {
     }
@@ -171,5 +177,9 @@ public class ConversationMessage {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public List<MessageAttachment> getAttachments() {
+        return attachments;
     }
 }

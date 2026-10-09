@@ -137,18 +137,19 @@ public class ConsultationController {
     public StreamingResponseBody streamMessage(@PathVariable Long id,
                                                Authentication authentication,
                                                @RequestParam String content,
-                                               @RequestParam(defaultValue = "chat") String action) {
+                                               @RequestParam(defaultValue = "chat") String action,
+                                               @RequestParam(required = false) Long attachmentId) {
         User user = userService.findByPhone(authentication.getName());
         ConsultationService.AiRequest request;
         Long humanMessageId = null;
         try {
             if (user.getRole() == Role.PATIENT) {
-                request = consultationService.preparePatientMessage(id, user, content);
+                request = consultationService.preparePatientMessage(id, user, content, attachmentId);
             } else if ("directive".equals(action)) {
-                request = consultationService.prepareDoctorDirective(id, user, content);
+                request = consultationService.prepareDoctorDirective(id, user, content, attachmentId);
             } else {
                 request = null;
-                humanMessageId = consultationService.postDoctorChat(id, user, content);
+                humanMessageId = consultationService.postDoctorChat(id, user, content, attachmentId);
             }
         } catch (BusinessException e) {
             String message = e.getMessage();
@@ -205,14 +206,15 @@ public class ConsultationController {
     public Map<String, Object> postMessageJson(@PathVariable Long id,
                                                Authentication authentication,
                                                @RequestParam String content,
-                                               @RequestParam(defaultValue = "chat") String action) {
+                                               @RequestParam(defaultValue = "chat") String action,
+                                               @RequestParam(required = false) Long attachmentId) {
         User user = userService.findByPhone(authentication.getName());
         try {
             if (user.getRole() == Role.DOCTOR) {
                 MessageType type = "directive".equals(action) ? MessageType.DIRECTIVE : MessageType.CHAT;
-                consultationService.postDoctorGroupMessage(id, user, content, type);
+                consultationService.postDoctorGroupMessage(id, user, content, type, attachmentId);
             } else {
-                consultationService.postPatientMessage(id, user, content);
+                consultationService.postPatientMessage(id, user, content, attachmentId);
             }
             return Map.of("ok", true);
         } catch (BusinessException e) {
@@ -227,14 +229,15 @@ public class ConsultationController {
                               Authentication authentication,
                               @RequestParam String content,
                               @RequestParam(defaultValue = "chat") String action,
+                              @RequestParam(required = false) Long attachmentId,
                               RedirectAttributes ra) {
         User user = userService.findByPhone(authentication.getName());
         try {
             if (user.getRole() == Role.DOCTOR) {
                 MessageType type = "directive".equals(action) ? MessageType.DIRECTIVE : MessageType.CHAT;
-                consultationService.postDoctorGroupMessage(id, user, content, type);
+                consultationService.postDoctorGroupMessage(id, user, content, type, attachmentId);
             } else {
-                consultationService.postPatientMessage(id, user, content);
+                consultationService.postPatientMessage(id, user, content, attachmentId);
             }
         } catch (BusinessException e) {
             ra.addFlashAttribute("error", e.getMessage());

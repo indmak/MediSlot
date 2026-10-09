@@ -85,6 +85,18 @@
                 <span th:if="${m.messageType.name() == 'DIRECTIVE'}" class="badge-status badge-pending">医生指令</span>
             </div>
             <div class="chat-msg__body" th:if="${m.messageType.name() != 'DRAFT'}" th:text="${m.content}">消息内容</div>
+            <div class="chat-attachments" th:if="${!#lists.isEmpty(m.attachments)}">
+                <th:block th:each="att : ${m.attachments}">
+                    <a th:if="${att.image}" class="chat-attachment-img-link"
+                       th:href="@{'/attachments/' + ${att.id}}" target="_blank" rel="noopener">
+                        <img class="chat-attachment-img" th:src="@{'/attachments/' + ${att.id}"
+                             th:alt="${att.originalName}">
+                    </a>
+                    <a th:unless="${att.image}" class="chat-attachment-file"
+                       th:href="@{'/attachments/' + ${att.id}}" target="_blank" rel="noopener"
+                       th:text="${'📎 ' + att.originalName}">📎 文件</a>
+                </th:block>
+            </div>
             <div class="chat-draft" th:if="${m.messageType.name() == 'DRAFT'}">
                 <div class="chat-draft__head">
                     <span>AI 草稿</span>
@@ -116,7 +128,14 @@
 
     <div class="card form-card chat-input" th:if="${conversation.status.name() == 'ACTIVE'}">
         <form id="chatForm" th:action="@{/consultations/{id}/messages(id=${conversation.id})}" method="post">
-            <textarea class="form-control" name="content" rows="2" placeholder="输入消息…" required></textarea>
+            <textarea class="form-control" name="content" rows="2" placeholder="输入消息…"></textarea>
+            <div class="chat-input__attach">
+                <label class="btn btn-sm btn-outline-primary" for="chatFile">
+                    <i class="bi bi-paperclip"></i> 附件
+                </label>
+                <input type="file" id="chatFile" name="file" accept="image/*,application/pdf" class="d-none">
+                <span id="chatFileName" class="chat-input__filename"></span>
+            </div>
             <div class="chat-input__actions">
                 <th:block th:if="${isDoctor}">
                     <button class="btn btn-outline-primary" type="submit" name="action" value="chat">回复患者</button>

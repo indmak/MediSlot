@@ -14,6 +14,7 @@
 预约 Appointment 1 ── 1 结构化症状 SymptomIntake
 预约 Appointment 1 ── N 会话 Conversation
 会话 Conversation 1 ── N 消息 ConversationMessage
+消息 ConversationMessage 1 ── N 附件 MessageAttachment
 ```
 
 一句话：一个科室有多个医生，一个医生有多个排班，一个排班能被多个患者预约，一个预约对应一笔支付。
@@ -173,6 +174,25 @@
 | temperature | DECIMAL(3,1) | | 体温（℃） |
 | red_flags | VARCHAR(255) | | 危险信号（逗号分隔） |
 | created_at / updated_at | DATETIME | | |
+
+### message_attachment（消息附件）
+
+图片 / 文件。上传时先落库（`message_id` 为空），发送消息时再关联。
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | BIGINT | PK, auto | 主键 |
+| message_id | BIGINT | FK→conversation_message | 关联消息（可空） |
+| conversation_id | BIGINT | FK→conversation, NOT NULL | 所属会话 |
+| uploader_id | BIGINT | | 上传者 user_id |
+| original_name | VARCHAR(255) | | 原始文件名 |
+| stored_name | VARCHAR(100) | NOT NULL | 存储文件名（UUID） |
+| content_type | VARCHAR(100) | | MIME 类型（图片 / PDF） |
+| size | BIGINT | NOT NULL | 字节数（上限 5MB） |
+| created_at | DATETIME | NOT NULL | |
+
+> 文件落盘在 `medislot.upload.dir`（容器内 `/app/uploads`，映射到宿主机 `./data/uploads`）；
+> 下载走 `GET /attachments/{id}`，仅会话参与方可访问。
 
 ## 预约状态机
 

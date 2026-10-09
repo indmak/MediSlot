@@ -74,11 +74,12 @@ public class CaseStudyController {
     @PostMapping(value = "/{id}/messages/stream", produces = "text/event-stream;charset=UTF-8")
     public StreamingResponseBody streamMessage(@PathVariable Long id,
                                                Authentication authentication,
-                                               @RequestParam String content) {
+                                               @RequestParam String content,
+                                               @RequestParam(required = false) Long attachmentId) {
         User user = userService.findByPhone(authentication.getName());
         ConsultationService.AiRequest request;
         try {
-            request = consultationService.prepareCaseMessage(id, user, content);
+            request = consultationService.prepareCaseMessage(id, user, content, attachmentId);
         } catch (BusinessException e) {
             String message = e.getMessage();
             return out -> SseUtil.write(newWriter(out), "error", "{\"message\":" + SseUtil.jsonString(message) + "}");
@@ -123,10 +124,11 @@ public class CaseStudyController {
     @ResponseBody
     public Map<String, Object> postMessageJson(@PathVariable Long id,
                                                Authentication authentication,
-                                               @RequestParam String content) {
+                                               @RequestParam String content,
+                                               @RequestParam(required = false) Long attachmentId) {
         User user = userService.findByPhone(authentication.getName());
         try {
-            consultationService.postCaseMessage(id, user, content);
+            consultationService.postCaseMessage(id, user, content, attachmentId);
             return Map.of("ok", true);
         } catch (BusinessException e) {
             return Map.of("ok", false, "error", e.getMessage());
@@ -137,10 +139,11 @@ public class CaseStudyController {
     public String postMessage(@PathVariable Long id,
                               Authentication authentication,
                               @RequestParam String content,
+                              @RequestParam(required = false) Long attachmentId,
                               RedirectAttributes ra) {
         User user = userService.findByPhone(authentication.getName());
         try {
-            consultationService.postCaseMessage(id, user, content);
+            consultationService.postCaseMessage(id, user, content, attachmentId);
         } catch (BusinessException e) {
             ra.addFlashAttribute("error", e.getMessage());
         }

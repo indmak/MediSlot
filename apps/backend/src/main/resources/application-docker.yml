@@ -33,6 +33,8 @@ medislot:
   admin:
     phone: ${MEDISLOT_ADMIN_PHONE:13000000000}
     password: ${MEDISLOT_ADMIN_PASSWORD:admin123}
+  upload:
+    dir: /app/uploads
 
 logging:
   level:

@@ -9,6 +9,7 @@ import com.medislot.entity.ConversationScope;
 import com.medislot.entity.Department;
 import com.medislot.entity.Doctor;
 import com.medislot.entity.MessageType;
+import com.medislot.entity.MessageAttachment;
 import com.medislot.entity.Payment;
 import com.medislot.entity.ReviewStatus;
 import com.medislot.entity.Role;
@@ -23,12 +24,14 @@ import com.medislot.repository.PaymentRepository;
 import com.medislot.repository.ScheduleRepository;
 import com.medislot.repository.UserRepository;
 import com.medislot.service.AppointmentService;
+import com.medislot.service.AttachmentService;
 import com.medislot.service.ConsultationService;
 import com.medislot.service.PaymentService;
 import com.medislot.service.SymptomIntakeService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -54,6 +57,8 @@ class ConsultationFlowTest {
     private ConsultationService consultationService;
     @Autowired
     private SymptomIntakeService symptomIntakeService;
+    @Autowired
+    private AttachmentService attachmentService;
     @Autowired
     private DepartmentRepository departmentRepository;
     @Autowired
@@ -101,7 +106,7 @@ class ConsultationFlowTest {
         Conversation group = consultationService.getOrCreateGroup(setup.appointment().getId());
         assertThat(group.getScope()).isEqualTo(ConversationScope.GROUP);
 
-        consultationService.postPatientMessage(group.getId(), setup.patient(), "我这两天发烧、咳嗽");
+        consultationService.postPatientMessage(group.getId(), setup.patient(), "我这两天发烧、咳嗽", null);
         List<ConversationMessage> messages = messages(group);
         assertThat(messages).anyMatch(m -> m.getSenderType() == SenderType.PATIENT);
         assertThat(messages).anyMatch(m -> m.getSenderType() == SenderType.AI);
@@ -112,7 +117,7 @@ class ConsultationFlowTest {
         Setup setup = createPaidAppointment("20002");
         Conversation group = consultationService.getOrCreateGroup(setup.appointment().getId());
 
-        consultationService.postDoctorGroupMessage(group.getId(), setup.doctor(), "给一个最近的饮食方案", MessageType.DIRECTIVE);
+        consultationService.postDoctorGroupMessage(group.getId(), setup.doctor(), "给一个最近的饮食方案", MessageType.DIRECTIVE, null);
         ConversationMessage draft = messages(group).stream()
                 .filter(m -> m.getMessageType() == MessageType.DRAFT)
                 .findFirst().orElseThrow();
@@ -129,12 +134,12 @@ class ConsultationFlowTest {
     void privateCaseWindowAndSummary() {
         Setup setup = createPaidAppointment("20003");
         Conversation group = consultationService.getOrCreateGroup(setup.appointment().getId());
-        consultationService.postPatientMessage(group.getId(), setup.patient(), "反复胃痛一周");
+        consultationService.postPatientMessage(group.getId(), setup.patient(), "反复胃痛一周", null);
 
         Conversation privateCase = consultationService.getOrCreateDoctorPrivate(setup.appointment().getId());
         assertThat(privateCase.getScope()).isEqualTo(ConversationScope.DOCTOR_PRIVATE);
 
-        consultationService.postCaseMessage(privateCase.getId(), setup.doctor(), "需要补充哪些检查？");
+        consultationService.postCaseMessage(privateCase.getId(), setup.doctor(), "需要补充哪些检查？", null);
         assertThat(messages(privateCase)).anyMatch(m -> m.getSenderType() == SenderType.AI);
 
         consultationService.generateSummary(group.getId(), setup.doctor());
@@ -161,5 +166,22 @@ class ConsultationFlowTest {
 
         String context = symptomIntakeService.buildContext(setup.appointment().getId());
         assertThat(context).contains("反复咳嗽 3 天").contains("危险信号").contains("38.5");
+    }
+
+    @Test
+    void attachmentIsStoredLinkedAndExposed() {
+        Setup setup = createPaidAppointment("20005");
+        Conversation group = consultationService.getOrCreateGroup(setup.appointment().getId());
+
+        MockMultipartFile file = new MockMultipartFile("file", "x.png", "image/png", new byte[]{1, 2, 3});
+        MessageAttachment attachment = attachmentService.store(group.getId(), setup.patient(), file);
+        assertThat(attachment.isImage()).isTrue();
+
+        consultationService.postPatientMessage(group.getId(), setup.patient(), "", attachment.getId());
+
+        ConversationMessage human = consultationService.listMessages(group.getId()).stream()
+                .filter(m -> m.getSenderType() == SenderType.PATIENT)
+                .findFirst().orElseThrow();
+        assertThat(human.getAttachments()).hasSize(1);
     }
 }
