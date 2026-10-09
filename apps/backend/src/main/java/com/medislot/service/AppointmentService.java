@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 预约业务：提交、我的预约、取消，以及医生端的状态流转。
@@ -161,9 +160,12 @@ public class AppointmentService {
         }
     }
 
+    private static final java.util.concurrent.atomic.AtomicLong APPOINTMENT_SEQ =
+            new java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis() % 1_000_000);
+
     private String generateAppointmentNo(LocalDate date) {
         String day = date.toString().replace("-", "");
-        int seq = ThreadLocalRandom.current().nextInt(1, 1000);
-        return "A" + day + "-" + String.format("%03d", seq);
+        long seq = APPOINTMENT_SEQ.incrementAndGet() % 1_000_000;
+        return "A" + day + "-" + String.format("%06d", seq);
     }
 }

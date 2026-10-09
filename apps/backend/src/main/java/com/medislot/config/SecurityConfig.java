@@ -38,7 +38,9 @@ public class SecurityConfig {
                         .requestMatchers("/payments/**").hasRole("PATIENT")
                         // 诊前咨询（患者 / 医生，归属在 service 校验）
                         .requestMatchers("/consultations/**", "/cases/**", "/attachments/**").authenticated()
-                        // 管理后台
+                        // 知识库维护（管理员 / 知识库维护员）
+                        .requestMatchers("/admin/knowledge/**").hasAnyRole("ADMIN", "KB_MAINTAINER")
+                        // 管理后台（其余）
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
@@ -48,9 +50,13 @@ public class SecurityConfig {
                         .successHandler((request, response, authentication) -> {
                             boolean isAdmin = authentication.getAuthorities().stream()
                                     .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+                            boolean isKb = authentication.getAuthorities().stream()
+                                    .anyMatch(a -> "ROLE_KB_MAINTAINER".equals(a.getAuthority()));
                             boolean isDoctor = authentication.getAuthorities().stream()
                                     .anyMatch(a -> "ROLE_DOCTOR".equals(a.getAuthority()));
-                            response.sendRedirect(isAdmin ? "/admin" : (isDoctor ? "/doctor/today" : "/"));
+                            String target = isAdmin ? "/admin"
+                                    : (isKb ? "/admin/knowledge" : (isDoctor ? "/doctor/today" : "/"));
+                            response.sendRedirect(target);
                         })
                         .failureUrl("/login?error")
                         .permitAll()

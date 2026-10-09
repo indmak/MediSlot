@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('账号管理')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title">账号管理</h1>
+        <p class="page-subtitle">管理员 / 知识库维护员账号</p>
+    </header>
+
+    <nav th:replace="~{layout :: adminNav('accounts')}"></nav>
+
+    <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
+
+    <div class="card mb-4">
+        <table class="table ms-table">
+            <thead>
+            <tr><th>姓名</th><th>手机号</th><th>角色</th><th>创建时间</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="u : ${accounts}">
+                <td th:text="${u.name}">系统管理员</td>
+                <td th:text="${u.phone}">13000000000</td>
+                <td>
+                    <span class="badge-status badge-available"
+                          th:text="${u.role.name() == 'ADMIN' ? '管理员' : '知识库维护员'}">管理员</span>
+                </td>
+                <td th:text="${#temporals.format(u.createdAt,'yyyy-MM-dd HH:mm')}">-</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(accounts)}">
+                <td colspan="4" class="text-center text-muted">暂无账号</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card form-card">
+        <h2 class="section-title">新增账号</h2>
+        <form th:action="@{/admin/accounts}" th:object="${form}" method="post" class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="name">姓名</label>
+                <input class="form-control" id="name" type="text" th:field="*{name}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{name}"></div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="phone">手机号（登录名）</label>
+                <input class="form-control" id="phone" type="text" th:field="*{phone}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{phone}"></div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="password">密码（≥8 位）</label>
+                <input class="form-control" id="password" type="text" th:field="*{password}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{password}"></div>
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label" for="role">角色</label>
+                <select class="form-select" id="role" th:field="*{role}" th:errorclass="is-invalid">
+                    <option value="">请选择</option>
+                    <option value="ADMIN">管理员</option>
+                    <option value="KB_MAINTAINER">知识库维护员</option>
+                </select>
+                <div class="invalid-feedback" th:errors="*{role}"></div>
+            </div>
+            <div class="col-12 col-md-1 d-flex align-items-end">
+                <button class="btn btn-primary" type="submit">创建</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

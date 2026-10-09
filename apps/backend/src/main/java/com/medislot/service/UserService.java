@@ -54,6 +54,12 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new BusinessException("用户不存在：" + phone));
     }
 
+    /** 管理后台账号列表（管理员 + 知识库维护员）。 */
+    @Transactional(readOnly = true)
+    public List<User> listStaff() {
+        return userRepository.findAllByRoleInOrderByCreatedAtDesc(List.of(Role.ADMIN, Role.KB_MAINTAINER));
+    }
+
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String phone) throws UsernameNotFoundException {

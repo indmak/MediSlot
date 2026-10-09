@@ -1,5 +1,6 @@
 package com.medislot.web;
 
+import com.medislot.dto.AccountForm;
 import com.medislot.dto.DepartmentForm;
 import com.medislot.dto.DoctorForm;
 import com.medislot.dto.ScheduleForm;
@@ -9,6 +10,7 @@ import com.medislot.service.DepartmentService;
 import com.medislot.service.DoctorService;
 import com.medislot.service.ScheduleService;
 import com.medislot.service.SettingService;
+import com.medislot.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,17 +35,20 @@ public class AdminController {
     private final DoctorService doctorService;
     private final ScheduleService scheduleService;
     private final SettingService settingService;
+    private final UserService userService;
 
     public AdminController(AdminService adminService,
                            DepartmentService departmentService,
                            DoctorService doctorService,
                            ScheduleService scheduleService,
-                           SettingService settingService) {
+                           SettingService settingService,
+                           UserService userService) {
         this.adminService = adminService;
         this.departmentService = departmentService;
         this.doctorService = doctorService;
         this.scheduleService = scheduleService;
         this.settingService = settingService;
+        this.userService = userService;
     }
 
     // ===== 仪表盘 =====
@@ -174,6 +179,29 @@ public class AdminController {
         settingService.set(key, value);
         ra.addFlashAttribute("message", "设置已保存");
         return "redirect:/admin/settings";
+    }
+
+    // ===== 账号管理（管理员 / 知识库维护员） =====
+
+    @GetMapping("/accounts")
+    public String accounts(Model model) {
+        model.addAttribute("accounts", userService.listStaff());
+        if (!model.containsAttribute("form")) {
+            model.addAttribute("form", new AccountForm());
+        }
+        return "admin/accounts";
+    }
+
+    @PostMapping("/accounts")
+    public String createAccount(@Valid @ModelAttribute("form") AccountForm form,
+                                BindingResult bindingResult, RedirectAttributes ra) {
+        if (bindingResult.hasErrors()) {
+            flashForm(ra, form, bindingResult);
+            return "redirect:/admin/accounts";
+        }
+        userService.createStaff(form.getPhone(), form.getPassword(), form.getName(), form.getRole());
+        ra.addFlashAttribute("message", "账号已创建");
+        return "redirect:/admin/accounts";
     }
 
     private void flashForm(RedirectAttributes ra, Object form, BindingResult bindingResult) {

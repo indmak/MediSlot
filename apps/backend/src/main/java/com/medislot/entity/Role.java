@@ -6,7 +6,9 @@ package com.medislot.entity;
 public enum Role {
     PATIENT,
     DOCTOR,
-    ADMIN;
+    ADMIN,
+    /** 知识库维护员：维护 RAG 知识库（上传/更新/删除）。 */
+    KB_MAINTAINER;
 
     public String authority() {
         return "ROLE_" + name();

@@ -47,6 +47,7 @@ public class ConsultationService {
     private final SettingService settingService;
     private final SymptomIntakeService symptomIntakeService;
     private final AttachmentService attachmentService;
+    private final RagService ragService;
     private final AiChatClient aiChatClient;
 
     public ConsultationService(ConversationRepository conversationRepository,
@@ -55,6 +56,7 @@ public class ConsultationService {
                                SettingService settingService,
                                SymptomIntakeService symptomIntakeService,
                                AttachmentService attachmentService,
+                               RagService ragService,
                                AiChatClient aiChatClient) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
@@ -62,6 +64,7 @@ public class ConsultationService {
         this.settingService = settingService;
         this.symptomIntakeService = symptomIntakeService;
         this.attachmentService = attachmentService;
+        this.ragService = ragService;
         this.aiChatClient = aiChatClient;
     }
 
@@ -452,7 +455,24 @@ public class ConsultationService {
                 + "给出一般性的健康建议。\n"
                 + "严格遵守：不给出确诊结论，不开具处方；如出现胸痛、呼吸困难、大出血、意识障碍等危险信号，"
                 + "立即提示尽快就医/急诊。回复简洁、分点、口语化。"
-                + symptomIntakeService.buildContext(appointment.getId());
+                + symptomIntakeService.buildContext(appointment.getId())
+                + ragService.contextForConsultation(ragQuery(conversation));
+    }
+
+    /** 用预约原因 + 最近一条患者消息作为知识库检索的查询。 */
+    private String ragQuery(Conversation conversation) {
+        StringBuilder query = new StringBuilder();
+        if (conversation.getAppointment().getReason() != null) {
+            query.append(conversation.getAppointment().getReason()).append(' ');
+        }
+        List<ConversationMessage> messages = listMessages(conversation.getId());
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            if (messages.get(i).getSenderType() == SenderType.PATIENT) {
+                query.append(messages.get(i).getContent());
+                break;
+            }
+        }
+        return query.toString().trim();
     }
 
     private String privateSystemPrompt() {

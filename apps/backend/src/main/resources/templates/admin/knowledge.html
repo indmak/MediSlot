@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('知识库')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title">知识库</h1>
+        <p class="page-subtitle">上传医疗资料（PDF / Word / Markdown / txt），自动解析、切分、向量化，供 AI 检索</p>
+    </header>
+
+    <nav th:replace="~{layout :: adminNav('knowledge')}"></nav>
+
+    <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+    <div class="alert alert-danger" th:unless="${ragAvailable}">RAG 未启用（medislot.rag.enabled=false），无法索引或问答。</div>
+
+    <div class="card form-card mb-4">
+        <h2 class="section-title">上传文档</h2>
+        <form th:action="@{/admin/knowledge}" method="post" enctype="multipart/form-data" class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="title">标题（选填）</label>
+                <input class="form-control" id="title" name="title" type="text" placeholder="如：儿童发热护理指南">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="category">分类（选填）</label>
+                <input class="form-control" id="category" name="category" type="text" placeholder="如：儿科">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="file">文件</label>
+                <input class="form-control" id="file" name="file" type="file" required>
+            </div>
+            <div class="col-12 col-md-2 d-flex align-items-end">
+                <button class="btn btn-primary" type="submit">上传并索引</button>
+            </div>
+        </form>
+        <p class="page-subtitle" style="margin-top:10px">
+            单文件上限 20MB。索引为同步执行，较大文件可能需要数十秒。
+            <a th:href="@{/admin/knowledge/ask}">→ 知识库问答</a>
+        </p>
+    </div>
+
+    <div class="card">
+        <table class="table ms-table">
+            <thead>
+            <tr>
+                <th>标题</th><th>分类</th><th>状态</th><th>片段</th><th>大小</th><th>更新时间</th><th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="d : ${documents}">
+                <td th:text="${d.title}">标题</td>
+                <td th:text="${d.category != null ? d.category : '-'}">-</td>
+                <td>
+                    <span class="badge-status"
+                          th:classappend="${d.status.name() == 'READY' ? 'badge-completed' : (d.status.name() == 'FAILED' ? 'badge-cancelled' : 'badge-pending')}"
+                          th:text="${d.status.label}">已就绪</span>
+                    <span class="text-danger" th:if="${d.errorMessage != null}" th:text="${d.errorMessage}"></span>
+                </td>
+                <td th:text="${d.chunkCount}">0</td>
+                <td th:text="${d.size} + ' B'">0 B</td>
+                <td th:text="${#temporals.format(d.updatedAt,'MM-dd HH:mm')}">-</td>
+                <td class="text-end">
+                    <form th:action="@{/admin/knowledge/{id}/reindex(id=${d.id})}" method="post" class="d-inline">
+                        <button class="btn btn-sm btn-outline-primary" type="submit">重建索引</button>
+                    </form>
+                    <form th:action="@{/admin/knowledge/{id}/delete(id=${d.id})}" method="post" class="d-inline">
+                        <button class="btn btn-sm btn-danger-outline" type="submit">删除</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(documents)}">
+                <td colspan="7" class="text-center text-muted">还没有文档，先上传一份吧</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

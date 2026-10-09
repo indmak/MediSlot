@@ -56,7 +56,7 @@ class RenderWithDataTest {
     @Test
     void homePageRendersDoctorCard() throws Exception {
         Department department = departmentRepository.save(new Department("渲染测试科", 99));
-        User user = userRepository.save(new User("13700000000", passwordEncoder.encode("x"), "渲染测试医生", Role.DOCTOR));
+        User user = userRepository.save(new User("13700009999", passwordEncoder.encode("x"), "渲染测试医生", Role.DOCTOR));
         Doctor doctor = new Doctor(user, department, "主治医师", "测试简介");
         doctorRepository.save(doctor);
 

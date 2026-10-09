@@ -73,12 +73,22 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         ensureAdmin();
+        ensureKbMaintainer();
         ensureSettings();
         if (seedEnabled) {
             seedDemoData();
         } else {
             log.info("[init] 演示数据未启用（medislot.seed.enabled=false）");
         }
+    }
+
+    /** 幂等地保证存在一个知识库维护员账号。 */
+    private void ensureKbMaintainer() {
+        if (userRepository.countByRole(Role.KB_MAINTAINER) > 0) {
+            return;
+        }
+        userRepository.save(new User("13700000000", encode("kb123456"), "知识库维护员", Role.KB_MAINTAINER));
+        log.info("[init] 已内置知识库维护员账号：13700000000");
     }
 
     /** 幂等写入系统设置默认值（管理员设置中心）。 */
@@ -88,6 +98,9 @@ public class DataInitializer implements CommandLineRunner {
         defaults.put("consultation.max-messages", new String[]{"30", "单个咨询会话消息上限"});
         defaults.put("consultation.rate-limit-seconds", new String[]{"3", "患者发送消息的最小间隔（秒）"});
         defaults.put("consultation.max-history", new String[]{"20", "发送给 AI 的最近历史消息条数"});
+        defaults.put("rag.enabled", new String[]{"true", "诊前咨询是否使用知识库检索增强"});
+        defaults.put("rag.top-k", new String[]{"3", "知识库检索返回条数"});
+        defaults.put("rag.max-context-chars", new String[]{"2000", "注入提示词的知识库文本上限"});
         defaults.forEach((key, value) -> {
             if (appSettingRepository.findById(key).isEmpty()) {
                 appSettingRepository.save(new AppSetting(key, value[0], value[1]));

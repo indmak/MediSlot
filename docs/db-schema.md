@@ -1,6 +1,6 @@
 # MediSlot 数据库设计
 
-数据库名：`medislot_db`，关系库 MySQL 8.x，字符集 `utf8mb4`。
+数据库名：`medislot_db`，**PostgreSQL 16 + pgvector**（业务数据与 RAG 向量同库）。
 
 ## 实体关系
 
@@ -21,7 +21,9 @@
 
 ## 表结构
 
-### user（用户）
+### users（用户）
+
+> 表名 `users`（`user` 是 PostgreSQL 保留字）。
 
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
@@ -29,7 +31,7 @@
 | phone | VARCHAR(20) | UNIQUE, NOT NULL | 手机号，登录账号 |
 | password | VARCHAR(100) | NOT NULL | BCrypt 加密后的密码 |
 | name | VARCHAR(50) | NOT NULL | 姓名 |
-| role | VARCHAR(20) | NOT NULL | `PATIENT` / `DOCTOR` / `ADMIN` |
+| role | VARCHAR(20) | NOT NULL | `PATIENT` / `DOCTOR` / `ADMIN` / `KB_MAINTAINER` |
 | created_at | DATETIME | NOT NULL | 创建时间 |
 
 ### department（科室）
@@ -60,7 +62,7 @@
 |------|------|------|------|
 | id | BIGINT | PK, auto | 主键 |
 | doctor_id | BIGINT | FK→doctor | 所属医生 |
-| date | DATE | NOT NULL | 出诊日期 |
+| schedule_date | DATE | NOT NULL | 出诊日期 |
 | start_time | TIME | NOT NULL | 开始时间 |
 | end_time | TIME | NOT NULL | 结束时间 |
 | total_count | INT | NOT NULL | 总号源数 |
@@ -193,6 +195,30 @@
 
 > 文件落盘在 `medislot.upload.dir`（容器内 `/app/uploads`，映射到宿主机 `./data/uploads`）；
 > 下载走 `GET /attachments/{id}`，仅会话参与方可访问。
+
+### knowledge_document（知识库文档）
+
+RAG 知识库的文档元数据。切分片段与向量由 Spring AI 的 `vector_store` 表管理
+（metadata 含 `documentId` / `title` / `chunkIndex`），维度 1024（智谱 `embedding-3`）。
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | BIGINT | PK, auto | 主键 |
+| title | VARCHAR(200) | NOT NULL | 标题 |
+| original_filename | VARCHAR(255) | | 原始文件名 |
+| stored_name | VARCHAR(100) | NOT NULL | 存储文件名（UUID） |
+| content_type | VARCHAR(100) | | MIME 类型 |
+| size | BIGINT | NOT NULL | 字节数（上限 20MB） |
+| status | VARCHAR(20) | NOT NULL | `PENDING`/`PROCESSING`/`READY`/`FAILED` |
+| chunk_count | INT | | 切分片段数 |
+| error_message | VARCHAR(500) | | 失败原因 |
+| category | VARCHAR(50) | | 分类（如科室） |
+| uploaded_by | BIGINT | | 上传者 user_id |
+| created_at / updated_at | DATETIME | | |
+
+> `vector_store` 由 Spring AI PgVectorStore 创建（`embedding vector(1024)` + HNSW 索引）。
+> 原始文件落盘在 `medislot.kb.dir`（容器内 `/app/uploads/kb`）。
+> 管理员可在「设置中心」用 `rag.enabled` / `rag.top-k` / `rag.max-context-chars` 控制检索增强。
 
 ## 预约状态机
 

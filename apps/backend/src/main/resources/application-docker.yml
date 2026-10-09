@@ -10,7 +10,7 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     # 密码来自挂载文件（见 docker-compose.prod.yml），不经过环境变量
     password: ${db_password}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -35,6 +35,11 @@ medislot:
     password: ${MEDISLOT_ADMIN_PASSWORD:admin123}
   upload:
     dir: /app/uploads
+  kb:
+    dir: /app/uploads/kb
+  rag:
+    enabled: true
+    dimensions: 1024
 
 logging:
   level:

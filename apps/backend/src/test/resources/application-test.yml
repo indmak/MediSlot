@@ -1,7 +1,7 @@
-# ===== 测试环境（H2 内存库，无需 MySQL） =====
+# ===== 测试环境（H2 内存库，无需 PostgreSQL） =====
 spring:
   datasource:
-    url: jdbc:h2:mem:medislot;MODE=MySQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER,DATE,TIME,VALUE,KEY
+    url: jdbc:h2:mem:medislot;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password: ""
@@ -14,6 +14,8 @@ spring:
 
 medislot:
   seed:
+    enabled: false
+  rag:
     enabled: false
   upload:
     dir: ${java.io.tmpdir}/medislot-test-uploads

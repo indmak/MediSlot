@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('知识库问答')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper content-wrapper--narrow">
+    <header class="page-header">
+        <h1 class="page-title">知识库问答</h1>
+        <p class="page-subtitle">基于已上传的知识库内容回答（检索增强）</p>
+    </header>
+
+    <nav th:replace="~{layout :: adminNav('knowledge')}"></nav>
+
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+
+    <div class="card form-card mb-4">
+        <form th:action="@{/admin/knowledge/ask}" method="post">
+            <div class="mb-3">
+                <label class="form-label" for="question">问题</label>
+                <textarea class="form-control" id="question" name="question" rows="2"
+                          placeholder="例如：儿童发热多少度需要用退烧药？" th:text="${question}"></textarea>
+            </div>
+            <div class="form-actions">
+                <a class="btn btn-outline-primary" th:href="@{/admin/knowledge}">返回知识库</a>
+                <button class="btn btn-primary" type="submit">提问</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card summary-card" th:if="${answer != null}">
+        <h2 class="section-title">回答</h2>
+        <pre class="chat-summary" th:text="${answer}"></pre>
+        <p class="page-subtitle" th:if="${!#lists.isEmpty(citations)}">
+            来源：<span th:each="c : ${citations}" th:text="${c + '  '}"></span>
+        </p>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

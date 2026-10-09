@@ -44,6 +44,14 @@ medislot:
   upload:
     # 附件存储目录（相对工作目录；容器内为 /app/uploads）
     dir: uploads
+  kb:
+    # 知识库原始文档目录
+    dir: uploads/kb
+  rag:
+    # RAG 基础设施总开关（关掉则不创建向量库，测试环境关闭）
+    enabled: false
+    # 向量维度，须与嵌入模型一致（智谱 embedding-3 = 1024）
+    dimensions: 1024
 
 logging:
   level:

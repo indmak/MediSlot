@@ -30,7 +30,7 @@ public class Schedule {
     @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
 
-    @Column(name = "date", nullable = false)
+    @Column(name = "schedule_date", nullable = false)
     private LocalDate date;
 
     @Column(name = "start_time", nullable = false)

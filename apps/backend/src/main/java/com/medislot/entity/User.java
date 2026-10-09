@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * 用户（患者 / 医生 / 管理员共用一张表，靠 role 区分）。
  */
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 public class User {
 
     @Id

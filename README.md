@@ -63,6 +63,12 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 - The chat is **live**: the sender's message is sent over AJAX, the **AI reply streams in token by token (SSE)**, and the page polls for new messages every few seconds — no full-page reload, and the patient and doctor see each other's messages in near real time.
 - **Structured intake**: the patient can fill a structured symptom form (chief complaint, symptoms, duration, severity, temperature, history, red flags). It is injected into the AI's context and shown to the doctor as a summary card.
 - **Attachments**: patients and doctors can attach images (or PDFs, up to 5 MB) to a message; images render inline, other files as links. Files are stored on a mounted volume and served only to the conversation's participants.
+
+**Knowledge base (RAG)**
+
+- A **KB_MAINTAINER** role plus admin UI (`/admin/knowledge`) to upload, re-index and delete knowledge documents. Admin creates maintainer accounts in `/admin/accounts`.
+- Documents are parsed (Apache Tika), chunked, embedded via **Zhipu `embedding-3`**, and stored in **pgvector** through Spring AI. Doctors/admins can ask the KB in natural language.
+- The pre-consultation AI is **grounded with retrieved KB snippets** (toggle + top-k configurable in the admin settings center).
 - Powered by the **DeepSeek** API (`deepseek-flash` by default, OpenAI-compatible). The API key is injected as a mounted secret, never in code or env vars. Without a key the app falls back to a built-in mock so the flow still works.
 
 ## Tech Stack
@@ -73,12 +79,12 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 | Framework | Spring Boot 4.1, Spring MVC |
 | View | Thymeleaf 3.1 + Bootstrap 5 |
 | Persistence | Spring Data JPA / Hibernate 7 |
-| Database | MySQL 8.4 (HikariCP) |
+| Database | PostgreSQL 16 + pgvector (HikariCP) |
 | Security | Spring Security 7 (form login + role-based access) |
 | Validation | Jakarta Bean Validation |
 | Build | Maven 3.10 (with wrapper) |
 | Deploy | Docker Compose (app + database containers) |
-| AI | DeepSeek (OpenAI-compatible chat completions) |
+| AI | DeepSeek (chat) + Zhipu `embedding-3` (embeddings, RAG) |
 
 ## Architecture
 
