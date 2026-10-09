@@ -29,7 +29,7 @@
     </section>
 
     <div class="chat" id="chatMessages"
-         th:attr="data-last-id=${lastMessageId},data-conv=${conversation.id},data-is-doctor=${isDoctor},data-endpoint='/consultations'">
+         th:attr="data-last-id=${lastMessageId},data-conv=${conversation.id},data-is-doctor=${isDoctor},data-endpoint='/consultations',data-self=${isDoctor ? 'DOCTOR' : 'PATIENT'}">
         <div class="chat-msg" th:each="m : ${messages}"
              th:classappend="${m.senderType.name() == 'PATIENT' ? 'chat-msg--patient' : (m.senderType.name() == 'DOCTOR' ? 'chat-msg--doctor' : (m.senderType.name() == 'AI' ? 'chat-msg--ai' : 'chat-msg--system'))}">
             <div class="chat-msg__meta">

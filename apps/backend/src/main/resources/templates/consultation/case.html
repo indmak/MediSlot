@@ -20,7 +20,7 @@
     <div class="alert alert-danger" id="chatError" style="display:none"></div>
 
     <div class="chat chat--case" id="chatMessages"
-         th:attr="data-last-id=${lastMessageId},data-conv=${conversation.id},data-is-doctor=true,data-endpoint='/cases'">
+         th:attr="data-last-id=${lastMessageId},data-conv=${conversation.id},data-is-doctor=true,data-endpoint='/cases',data-self='DOCTOR'">
         <div class="chat-msg" th:each="m : ${messages}"
              th:classappend="${m.senderType.name() == 'DOCTOR' ? 'chat-msg--patient' : (m.senderType.name() == 'AI' ? 'chat-msg--ai' : 'chat-msg--system')}">
             <div class="chat-msg__meta">

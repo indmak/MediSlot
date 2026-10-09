@@ -1,6 +1,7 @@
 package com.medislot.service.ai;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * 无 DeepSeek 密钥时的降级实现：返回预设话术，保证流程可跑通。
@@ -10,6 +11,11 @@ public class MockAiChatClient implements AiChatClient {
     @Override
     public boolean isAvailable() {
         return true;
+    }
+
+    @Override
+    public String model() {
+        return "mock";
     }
 
     @Override
@@ -23,5 +29,20 @@ public class MockAiChatClient implements AiChatClient {
                     + "（当前未配置 DeepSeek 密钥，此为模拟回复。）";
         }
         return new AiReply(reply, "mock", 0, 0);
+    }
+
+    @Override
+    public void streamChat(List<ChatMessage> messages, Consumer<String> onToken) {
+        String text = chat(messages).content();
+        int chunkSize = 6;
+        for (int i = 0; i < text.length(); i += chunkSize) {
+            onToken.accept(text.substring(i, Math.min(text.length(), i + chunkSize)));
+            try {
+                Thread.sleep(40);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 }

@@ -1,4 +1,4 @@
-/* 诊前咨询 / 病例研究：AJAX 发送 + 轮询新消息（无框架） */
+/* 诊前咨询 / 病例研究：SSE 流式发送 + 轮询新消息（无框架） */
 (function () {
     var container = document.getElementById('chatMessages');
     if (!container) {
@@ -9,6 +9,7 @@
     var endpoint = container.dataset.endpoint || '/consultations';
     var isDoctor = container.dataset.isDoctor === 'true';
     var isCase = endpoint === '/cases';
+    var SELF = container.dataset.self || (isDoctor ? 'DOCTOR' : 'PATIENT');
     var csrfMeta = document.querySelector('meta[name="_csrf"]');
     var csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
     var csrf = csrfMeta ? csrfMeta.content : '';
@@ -18,11 +19,18 @@
     var errorBox = document.getElementById('chatError');
     var lastId = Number(container.dataset.lastId || 0);
     var polling = false;
+    var streaming = false;
 
     function esc(s) {
         return (s === null || s === undefined ? '' : String(s)).replace(/[&<>"']/g, function (c) {
             return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
         });
+    }
+
+    function nowTime() {
+        var d = new Date();
+        function p(n) { return (n < 10 ? '0' : '') + n; }
+        return p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
     }
 
     function badgeClass(status) {
@@ -55,7 +63,6 @@
                 html += '<div class="chat-draft__note">医生备注：' + esc(m.reviewNote) + '</div>';
             }
             draft.innerHTML = html;
-
             if (!isCase && isDoctor && m.reviewStatus === 'PENDING') {
                 var form = document.createElement('form');
                 form.className = 'chat-draft__review';
@@ -100,7 +107,7 @@
     }
 
     function poll() {
-        if (polling) return;
+        if (polling || streaming) return;
         polling = true;
         fetch(endpoint + '/' + convId + '/messages.json?after=' + lastId, {headers: {'Accept': 'application/json'}})
             .then(function (res) {
@@ -114,11 +121,51 @@
                     });
                     if (empty) empty.style.display = 'none';
                     scrollToBottom();
-                    if (list.some(function (m) { return m.senderType === 'AI'; })) hideTyping();
                 }
             })
             .catch(function () { /* ignore */ })
             .finally(function () { polling = false; });
+    }
+
+    function createAiBubble() {
+        var wrap = document.createElement('div');
+        wrap.className = 'chat-msg chat-msg--ai';
+        var meta = document.createElement('div');
+        meta.className = 'chat-msg__meta';
+        meta.textContent = 'AI 助手 · ' + nowTime();
+        wrap.appendChild(meta);
+        var body = document.createElement('div');
+        body.className = 'chat-msg__body';
+        wrap.appendChild(body);
+        return wrap;
+    }
+
+    function handleEvent(evt, data, ctx) {
+        var obj;
+        try {
+            obj = JSON.parse(data);
+        } catch (e) {
+            return;
+        }
+        if (evt === 'start') {
+            if (obj.humanMessageId && obj.humanMessageId > lastId) lastId = obj.humanMessageId;
+        } else if (evt === 'delta') {
+            if (obj.text) {
+                ctx.aiText += obj.text;
+                if (!ctx.bubble) {
+                    ctx.bubble = createAiBubble();
+                    container.appendChild(ctx.bubble);
+                    if (empty) empty.style.display = 'none';
+                }
+                ctx.bubble.querySelector('.chat-msg__body').textContent = ctx.aiText;
+                scrollToBottom();
+            }
+        } else if (evt === 'done') {
+            ctx.aiMessageId = obj.aiMessageId || null;
+            if (ctx.aiMessageId && ctx.aiMessageId > lastId) lastId = ctx.aiMessageId;
+        } else if (evt === 'error') {
+            ctx.error = obj.message || 'AI 暂时不可用';
+        }
     }
 
     var form = document.getElementById('chatForm');
@@ -130,27 +177,74 @@
             if (!content) return;
             var action = (e.submitter && e.submitter.value) ? e.submitter.value : 'chat';
             textarea.value = '';
+
+            // 乐观渲染自己的消息
+            container.appendChild(renderMessage({
+                id: 'tmp-' + Date.now(),
+                senderType: SELF,
+                senderLabel: SELF === 'DOCTOR' ? '医生' : '患者',
+                messageType: (SELF === 'DOCTOR' && action === 'directive') ? 'DIRECTIVE' : 'CHAT',
+                content: content,
+                reviewStatus: null, reviewStatusLabel: null, reviewNote: null,
+                time: nowTime()
+            }));
+            if (empty) empty.style.display = 'none';
+            scrollToBottom();
             showTyping();
-            var headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+            streaming = true;
+
+            var ctx = {aiText: '', bubble: null, aiMessageId: null, error: null};
+            var headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'text/event-stream'};
             headers[csrfHeader] = csrf;
-            fetch(endpoint + '/' + convId + '/messages.json', {
+
+            fetch(endpoint + '/' + convId + '/messages/stream', {
                 method: 'POST',
                 headers: headers,
                 body: new URLSearchParams({content: content, action: action})
-            })
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (!data.ok) {
-                        showError(data.error || '发送失败');
-                        hideTyping();
-                    } else {
-                        poll();
-                    }
-                })
-                .catch(function () {
-                    showError('发送失败');
-                    hideTyping();
-                });
+            }).then(function (res) {
+                if (!res.ok || !res.body) {
+                    throw new Error('bad');
+                }
+                var reader = res.body.getReader();
+                var decoder = new TextDecoder();
+                var buffer = '';
+
+                function pump() {
+                    return reader.read().then(function (r) {
+                        if (r.done) return;
+                        buffer += decoder.decode(r.value, {stream: true});
+                        var blocks = buffer.split('\n\n');
+                        buffer = blocks.pop();
+                        blocks.forEach(function (block) {
+                            var evt = 'message', data = '';
+                            block.split('\n').forEach(function (line) {
+                                if (line.indexOf('event:') === 0) evt = line.slice(6).trim();
+                                else if (line.indexOf('data:') === 0) data += line.slice(5).trim();
+                            });
+                            if (data) handleEvent(evt, data, ctx);
+                        });
+                        return pump();
+                    });
+                }
+                return pump();
+            }).catch(function () {
+                ctx.error = ctx.error || '发送失败';
+            }).finally(function () {
+                streaming = false;
+                hideTyping();
+                // 医生指令：流式完成后替换为草稿卡（带核实按钮）
+                if (action === 'directive' && ctx.bubble && ctx.aiMessageId) {
+                    var draft = renderMessage({
+                        id: ctx.aiMessageId,
+                        senderType: 'AI', senderLabel: 'AI 助手', messageType: 'DRAFT',
+                        content: ctx.aiText, reviewStatus: 'PENDING', reviewStatusLabel: '待核实',
+                        reviewNote: null, time: nowTime()
+                    });
+                    ctx.bubble.replaceWith(draft);
+                }
+                if (ctx.error) showError(ctx.error);
+                poll();
+            });
         });
     }
 

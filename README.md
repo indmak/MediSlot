@@ -60,7 +60,7 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 - The doctor does **not** chat with the AI in this window. Instead the doctor **directs** the AI (e.g. "produce a recent diet plan"); the AI returns a **draft**, and the doctor reviews it — approve / reject / adjust (adjust regenerates a new version).
 - The doctor also has a **separate, private case-study window** to consult the AI about the case; it is invisible to the patient.
 - The doctor can generate an AI **consultation summary** and close the session.
-- The chat is **live**: messages are sent over AJAX and the page polls for new ones every few seconds (no full-page reload), so the patient and doctor see each other's messages in near real time.
+- The chat is **live**: the sender's message is sent over AJAX, the **AI reply streams in token by token (SSE)**, and the page polls for new messages every few seconds — no full-page reload, and the patient and doctor see each other's messages in near real time.
 - Powered by the **DeepSeek** API (`deepseek-flash` by default, OpenAI-compatible). The API key is injected as a mounted secret, never in code or env vars. Without a key the app falls back to a built-in mock so the flow still works.
 
 ## Tech Stack

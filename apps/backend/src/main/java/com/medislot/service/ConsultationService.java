@@ -59,6 +59,11 @@ public class ConsultationService {
         this.aiChatClient = aiChatClient;
     }
 
+    /** 一次 AI 回复请求：先落库人类消息并构建 prompt，再流式生成，最后落库 AI 消息。 */
+    public record AiRequest(Long humanMessageId, List<ChatMessage> prompt,
+                            MessageType responseType, Long parentMessageId) {
+    }
+
     // ==================== 会话获取 ====================
 
     @Transactional
@@ -194,6 +199,79 @@ public class ConsultationService {
         aiReplyPrivate(conversation);
     }
 
+    // ==================== 流式：准备 / 收尾 ====================
+
+    /** 患者发言：落库并构建 AI 回复 prompt（不在此调用 AI）。 */
+    @Transactional
+    public AiRequest preparePatientMessage(Long conversationId, User patient, String content) {
+        Conversation conversation = getRequired(conversationId);
+        assertGroupPatient(conversation, patient);
+        ensureActive(conversation);
+        ensureEnabled();
+        enforceRateLimit(conversation);
+        enforceMaxMessages(conversation);
+        ConversationMessage message = saveMessage(conversation, SenderType.PATIENT, patient.getId(), MessageType.CHAT, content);
+        List<ChatMessage> prompt = new ArrayList<>();
+        prompt.add(ChatMessage.system(groupSystemPrompt(conversation)));
+        prompt.addAll(history(conversation, false));
+        return new AiRequest(message.getId(), prompt, MessageType.CHAT, null);
+    }
+
+    /** 医生指挥 AI：落库指令并构建草稿 prompt。 */
+    @Transactional
+    public AiRequest prepareDoctorDirective(Long conversationId, User doctor, String content) {
+        Conversation conversation = getRequired(conversationId);
+        assertGroupDoctor(conversation, doctor);
+        ensureActive(conversation);
+        ConversationMessage message = saveMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.DIRECTIVE, content);
+        List<ChatMessage> prompt = new ArrayList<>();
+        prompt.add(ChatMessage.system(groupSystemPrompt(conversation)
+                + "\n\n【当前任务】医生要求你产出一份给患者看的方案草稿，请直接给出内容，不要寒暄。"));
+        prompt.addAll(history(conversation, true));
+        prompt.add(ChatMessage.user("【医生指令】" + content + "\n请据此产出一份给患者看的方案草稿。"));
+        return new AiRequest(message.getId(), prompt, MessageType.DRAFT, message.getId());
+    }
+
+    /** 医生病例研究发言：落库并构建 prompt。 */
+    @Transactional
+    public AiRequest prepareCaseMessage(Long conversationId, User doctor, String content) {
+        Conversation conversation = getRequired(conversationId);
+        assertPrivateDoctor(conversation, doctor);
+        ensureActive(conversation);
+        ensureEnabled();
+        ConversationMessage message = saveMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.CHAT, content);
+        List<ChatMessage> prompt = new ArrayList<>();
+        prompt.add(ChatMessage.system(privateSystemPrompt()));
+        prompt.addAll(history(conversation, true));
+        return new AiRequest(message.getId(), prompt, MessageType.CHAT, null);
+    }
+
+    /** 医生在群聊「回复患者」：只落库，不触发 AI。 */
+    @Transactional
+    public Long postDoctorChat(Long conversationId, User doctor, String content) {
+        Conversation conversation = getRequired(conversationId);
+        assertGroupDoctor(conversation, doctor);
+        ensureActive(conversation);
+        return saveMessage(conversation, SenderType.DOCTOR, doctor.getId(), MessageType.CHAT, content).getId();
+    }
+
+    /** 流式结束后落库 AI 消息，返回其 id。 */
+    @Transactional
+    public Long finishAiReply(Long conversationId, AiRequest request, String content, String model) {
+        Conversation conversation = getRequired(conversationId);
+        ConversationMessage message = new ConversationMessage(
+                conversation, SenderType.AI, null, request.responseType(), content);
+        message.setParentMessageId(request.parentMessageId());
+        message.setReviewStatus(request.responseType() == MessageType.DRAFT ? ReviewStatus.PENDING : null);
+        message.setModel(model);
+        messageRepository.save(message);
+        if (conversation.getAiModel() == null) {
+            conversation.setAiModel(model);
+            conversationRepository.save(conversation);
+        }
+        return message.getId();
+    }
+
     // ==================== AI 交互 ====================
 
     private void aiReplyToPatient(Conversation conversation) {
@@ -242,9 +320,7 @@ public class ConsultationService {
 
     private void aiReplyPrivate(Conversation conversation) {
         List<ChatMessage> prompt = new ArrayList<>();
-        prompt.add(ChatMessage.system(
-                "你是医生的病例研究助手，仅供医生私下研究病例使用，患者不可见。请基于病例信息专业作答，"
-                        + "可给出鉴别诊断思路、检查建议、用药参考，但需注明「仅供参考，最终以医生判断为准」。"));
+        prompt.add(ChatMessage.system(privateSystemPrompt()));
         prompt.addAll(history(conversation, true));
         AiReply reply = safeChat(prompt);
         if (reply == null) {
@@ -348,6 +424,11 @@ public class ConsultationService {
                 + "给出一般性的健康建议。\n"
                 + "严格遵守：不给出确诊结论，不开具处方；如出现胸痛、呼吸困难、大出血、意识障碍等危险信号，"
                 + "立即提示尽快就医/急诊。回复简洁、分点、口语化。";
+    }
+
+    private String privateSystemPrompt() {
+        return "你是医生的病例研究助手，仅供医生私下研究病例使用，患者不可见。请基于病例信息专业作答，"
+                + "可给出鉴别诊断思路、检查建议、用药参考，但需注明「仅供参考，最终以医生判断为准」。";
     }
 
     // ==================== 权限与限制 ====================
