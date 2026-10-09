@@ -44,6 +44,10 @@ POST /login（手机号 + 密码）
 | `totp_secret` | Base32 密钥，未启用时为空 |
 | `totp_enabled` | 是否已启用 |
 
+> **升级已有库**：`totp_enabled` 定义为 `boolean not null default false`，因此 `ddl-auto=update`
+> 在已有数据的库上也能自动补齐该列（旧行取默认值 `false`）。若手动迁移，执行
+> `ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled boolean NOT NULL DEFAULT false;`。
+
 ## 会话加固
 
 `application.yml`：

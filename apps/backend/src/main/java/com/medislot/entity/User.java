@@ -41,7 +41,8 @@ public class User {
     private String totpSecret;
 
     /** 是否已启用 TOTP 两步验证。 */
-    @Column(name = "totp_enabled", nullable = false)
+    @Column(name = "totp_enabled", nullable = false,
+            columnDefinition = "boolean not null default false")
     private boolean totpEnabled = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
