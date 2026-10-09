@@ -1,5 +1,6 @@
 package com.medislot.config;
 
+import com.medislot.service.LoginAttemptService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -7,9 +8,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Spring Security 表单登录 + 角色授权。
+ * Spring Security 表单登录 + 角色授权 + 登录加固（失败锁定、两步验证）。
  *
  * <p>第一层（URL 级）在此配置；第二层（数据归属）在 service 里判断。
  */
@@ -23,7 +26,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   MediSlotAuthSuccessHandler successHandler,
+                                                   MediSlotAuthFailureHandler failureHandler,
+                                                   LoginAttemptService loginAttemptService) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         // 公开：首页、医生列表/详情、静态资源、登录注册
@@ -44,21 +50,15 @@ public class SecurityConfig {
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
+                // 失败锁定前置拦截：被锁定的手机号直接拒绝
+                .addFilterBefore(new LoginLockFilter(loginAttemptService), UsernamePasswordAuthenticationFilter.class)
+                // 两步验证门禁：未完成 2FA 的用户只能访问验证/绑定页
+                .addFilterBefore(new PreTwoFactorFilter(), AuthorizationFilter.class)
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
-                        .successHandler((request, response, authentication) -> {
-                            boolean isAdmin = authentication.getAuthorities().stream()
-                                    .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
-                            boolean isKb = authentication.getAuthorities().stream()
-                                    .anyMatch(a -> "ROLE_KB_MAINTAINER".equals(a.getAuthority()));
-                            boolean isDoctor = authentication.getAuthorities().stream()
-                                    .anyMatch(a -> "ROLE_DOCTOR".equals(a.getAuthority()));
-                            String target = isAdmin ? "/admin"
-                                    : (isKb ? "/admin/knowledge" : (isDoctor ? "/doctor/today" : "/"));
-                            response.sendRedirect(target);
-                        })
-                        .failureUrl("/login?error")
+                        .successHandler(successHandler)
+                        .failureHandler(failureHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout

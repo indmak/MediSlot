@@ -39,7 +39,8 @@
                 <a class="btn btn-sm btn-primary" th:href="@{/register}">注册</a>
             </th:block>
             <th:block sec:authorize="isAuthenticated()">
-                <span class="ms-user" sec:authentication="name">用户</span>
+                <a class="ms-user" th:href="@{/account/2fa}" title="安全设置 / 两步验证"
+                   sec:authentication="name">用户</a>
                 <form th:action="@{/logout}" method="post" class="d-inline">
                     <button class="btn btn-sm btn-link" type="submit">退出</button>
                 </form>

@@ -25,7 +25,9 @@
             <div class="mb-4">
                 <label class="form-label" for="password">密码</label>
                 <input class="form-control" id="password" name="password" type="password"
-                       placeholder="请设置密码" required>
+                       placeholder="至少 8 位，含字母和数字" required minlength="8"
+                       pattern="(?=.*[A-Za-z])(?=.*\d).{8,}">
+                <div class="form-text">至少 8 位，且同时包含字母和数字</div>
             </div>
             <button class="btn btn-primary w-100" type="submit">注册</button>
         </form>

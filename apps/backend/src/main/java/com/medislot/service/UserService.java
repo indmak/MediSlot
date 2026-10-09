@@ -37,15 +37,31 @@ public class UserService implements UserDetailsService {
     }
 
     /**
-     * 创建内部账号（管理员 / 医生），供管理后台使用。
+     * 创建内部账号（管理员 / 医生 / 知识库维护员），供管理后台使用。
      */
     @Transactional
     public User createStaff(String phone, String rawPassword, String name, Role role) {
+        validatePassword(rawPassword);
         if (userRepository.existsByPhone(phone)) {
             throw new BusinessException("该手机号已存在");
         }
         User user = new User(phone, passwordEncoder.encode(rawPassword), name, role);
         return userRepository.save(user);
+    }
+
+    /** 密码策略：至少 8 位，且同时包含字母与数字。 */
+    public static void validatePassword(String rawPassword) {
+        if (rawPassword == null || rawPassword.length() < 8
+                || !rawPassword.matches(".*[A-Za-z].*")
+                || !rawPassword.matches(".*\\d.*")) {
+            throw new BusinessException("密码至少 8 位，且需同时包含字母和数字");
+        }
+    }
+
+    /** 保存两步验证相关字段。 */
+    @Transactional
+    public void updateTotp(User user) {
+        userRepository.save(user);
     }
 
     @Transactional(readOnly = true)

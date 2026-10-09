@@ -32,6 +32,8 @@
 | password | VARCHAR(100) | NOT NULL | BCrypt 加密后的密码 |
 | name | VARCHAR(50) | NOT NULL | 姓名 |
 | role | VARCHAR(20) | NOT NULL | `PATIENT` / `DOCTOR` / `ADMIN` / `KB_MAINTAINER` |
+| totp_secret | VARCHAR(64) | NULL | TOTP 密钥（Base32），未启用两步验证时为空 |
+| totp_enabled | BOOLEAN | NOT NULL, default false | 是否已启用 TOTP 两步验证 |
 | created_at | DATETIME | NOT NULL | 创建时间 |
 
 ### department（科室）

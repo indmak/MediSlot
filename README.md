@@ -71,6 +71,13 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 - The pre-consultation AI is **grounded with retrieved KB snippets** (toggle + top-k configurable in the admin settings center).
 - Powered by the **DeepSeek** API (`deepseek-flash` by default, OpenAI-compatible). The API key is injected as a mounted secret, never in code or env vars. Without a key the app falls back to a built-in mock so the flow still works.
 
+**Security**
+
+- **Password policy**: at least 8 characters, mixing letters and digits — enforced on registration and on every staff account created from the admin console.
+- **Login throttling**: 5 consecutive failures lock a phone number for 15 minutes (checked before the password is even evaluated); a successful login clears the counter.
+- **Two-factor authentication (TOTP)**: mandatory for `ADMIN` and `KB_MAINTAINER`. Enrollment happens right after the first password login — scan the QR with **Tencent Authenticator** (or any standard TOTP app) and confirm a 6-digit code; later logins require the code before any page is reachable. Optional for other roles via `/account/2fa`.
+- **Session hardening**: `HttpOnly` + `SameSite=Lax` cookies, `Secure` under HTTPS, 30-minute idle timeout, and session-id rotation on login. A pre-2FA state (`ROLE_PRE_2FA`) confines half-authenticated users to the verification pages.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -80,7 +87,7 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 | View | Thymeleaf 3.1 + Bootstrap 5 |
 | Persistence | Spring Data JPA / Hibernate 7 |
 | Database | PostgreSQL 16 + pgvector (HikariCP) |
-| Security | Spring Security 7 (form login + role-based access) |
+| Security | Spring Security 7 (form login, role-based access, TOTP 2FA, login throttling) |
 | Validation | Jakarta Bean Validation |
 | Build | Maven 3.10 (with wrapper) |
 | Deploy | Docker Compose (app + database containers) |
@@ -95,7 +102,7 @@ flowchart TB
     Web --> Service["service/ &nbsp;·&nbsp; business logic, @Transactional"]
     Api -.-> Service
     Service --> Repo["repository/ &nbsp;·&nbsp; Spring Data JPA"]
-    Repo --> DB[("MySQL")]
+    Repo --> DB[("PostgreSQL + pgvector")]
 ```
 
 The rule is simple: business logic lives **only** in `service/`. `web/` and `api/` are thin adapters over the same services.
@@ -131,7 +138,7 @@ MediSlot/
 │           ├── templates/        # Thymeleaf pages
 │           └── static/css/       # design tokens + components
 ├── deploy/                       # Nginx reverse-proxy config + guide
-├── docs/                         # api.md, db-schema.md
+├── docs/                         # api.md, db-schema.md, rag.md, tech-stack.md, ui-design.md
 ├── scripts/                      # init.sql, start scripts
 ├── docker-compose.yml            # local stack
 ├── docker-compose.prod.yml       # production stack
@@ -143,7 +150,7 @@ MediSlot/
 ### Prerequisites
 
 - **Java 25** (the Maven wrapper handles Maven itself)
-- **MySQL 8** for local development — *or* just use Docker (see below)
+- **PostgreSQL 16** (with the `pgvector` extension) for local development — *or* just use Docker (see below)
 - **Docker + Docker Compose** for the containerized path
 
 ### Option A — Run everything with Docker
@@ -161,8 +168,9 @@ Then open <http://localhost:8080>.
 ### Option B — Local development
 
 ```bash
-# 1. Create the database
-mysql -u root -p -e "CREATE DATABASE medislot_db DEFAULT CHARACTER SET utf8mb4;"
+# 1. Create the database (PostgreSQL 16 + pgvector)
+createdb medislot_db
+psql medislot_db -c "CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
 
 # 2. Point the app at it (edit credentials in application-dev.yml if needed)
 
@@ -180,12 +188,14 @@ The `dev` profile auto-creates the schema (`ddl-auto=update`) and seeds demo dat
 | Admin | `13000000000` | `admin123` |
 | Doctor | `13800000001` | `doctor123` |
 | Patient | `13900000000` | `patient123` |
+| KB maintainer | `13700000000` | `kb123456` |
 
 > These are development-only credentials created by the seeder. Never enable seeding in production.
+> Admin and KB-maintainer logins additionally require TOTP 2FA — on first login you are asked to scan a QR code and confirm a code (see [Security](#features)).
 
 ### Running the tests
 
-Tests run against an in-memory H2 database, so no MySQL is required:
+Tests run against an in-memory H2 database, so no PostgreSQL is required:
 
 ```bash
 cd apps/backend
@@ -204,7 +214,7 @@ Configuration is split by Spring profile:
 
 ## Deployment
 
-`docker-compose.prod.yml` runs two containers — the Spring Boot app and MySQL — with the database **not** exposed to the host, the app bound to `127.0.0.1:8080`, and data persisted to a host directory. A reverse proxy (Nginx) terminates TLS and forwards to the app.
+`docker-compose.prod.yml` runs two containers — the Spring Boot app and PostgreSQL 16 (with `pgvector`) — with the database **not** exposed to the host, the app bound to `127.0.0.1:8080`, and data persisted to a host directory. A reverse proxy (Nginx) terminates TLS and forwards to the app.
 
 ```bash
 cp .env.prod.example .env.prod   # set strong passwords
@@ -232,6 +242,7 @@ Please keep the core architectural rule intact: **business logic belongs in `ser
 - [`docs/tech-stack.md`](docs/tech-stack.md) — architecture, technology choices, and conventions
 - [`docs/ui-design.md`](docs/ui-design.md) — the visual design system (Clinical Clean)
 - [`docs/db-schema.md`](docs/db-schema.md) — database schema and entity relationships
+- [`docs/rag.md`](docs/rag.md) — the knowledge base / RAG pipeline (embeddings, ingestion, grounding)
 - [`docs/api.md`](docs/api.md) — REST API contract (enabled in phase 2)
 
 ## License

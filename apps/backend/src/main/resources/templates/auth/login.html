@@ -13,6 +13,7 @@
 
         <div class="alert alert-success" th:if="${param.registered}">注册成功，请登录</div>
         <div class="alert alert-danger" th:if="${param.error}">手机号或密码错误</div>
+        <div class="alert alert-danger" th:if="${param.locked}">登录失败次数过多，账号已锁定，请 15 分钟后再试</div>
         <div class="alert alert-success" th:if="${param.logout}">已安全退出</div>
 
         <form th:action="@{/login}" method="post">

@@ -36,6 +36,14 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    /** TOTP 密钥（Base32），未启用两步验证时为空。 */
+    @Column(name = "totp_secret", length = 64)
+    private String totpSecret;
+
+    /** 是否已启用 TOTP 两步验证。 */
+    @Column(name = "totp_enabled", nullable = false)
+    private boolean totpEnabled = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -90,6 +98,22 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public String getTotpSecret() {
+        return totpSecret;
+    }
+
+    public void setTotpSecret(String totpSecret) {
+        this.totpSecret = totpSecret;
+    }
+
+    public boolean isTotpEnabled() {
+        return totpEnabled;
+    }
+
+    public void setTotpEnabled(boolean totpEnabled) {
+        this.totpEnabled = totpEnabled;
     }
 
     public LocalDateTime getCreatedAt() {

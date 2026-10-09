@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('两步验证')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper content-wrapper--narrow">
+    <div class="card auth-card">
+        <header class="page-header">
+            <h1 class="page-title">两步验证</h1>
+            <p class="page-subtitle" th:if="${enabled}">账号已启用两步验证</p>
+            <p class="page-subtitle" th:unless="${enabled}">用「腾讯身份验证器」扫描二维码完成绑定</p>
+        </header>
+
+        <div class="alert alert-success" th:if="${param.enabled}">两步验证已启用</div>
+        <div class="alert alert-warning" th:if="${param.disabled}">两步验证已关闭</div>
+        <div class="alert alert-danger" th:if="${param.error}">动态码错误，请重新输入</div>
+        <div class="alert alert-warning" th:if="${param.required}">该角色强制启用两步验证，无法关闭</div>
+        <div class="alert alert-warning" th:if="${required and !enabled}">
+            当前角色（管理员 / 知识库维护员）必须绑定两步验证后才能继续使用系统
+        </div>
+
+        <th:block th:if="${enabled}">
+            <p class="text-muted">每次登录都需输入身份验证器中的 6 位动态码。</p>
+            <form th:action="@{/account/2fa/disable}" method="post" th:unless="${required}">
+                <button class="btn btn-outline-danger w-100" type="submit">关闭两步验证</button>
+            </form>
+        </th:block>
+
+        <th:block th:unless="${enabled}">
+            <div class="text-center mb-3">
+                <img th:src="${qrDataUri}" alt="两步验证二维码" width="200" height="200">
+            </div>
+            <p class="text-muted">无法扫码？手动输入密钥：<code th:text="${secret}">SECRET</code></p>
+            <form th:action="@{/account/2fa}" method="post">
+                <div class="mb-4">
+                    <label class="form-label" for="code">验证器中的 6 位动态码</label>
+                    <input class="form-control" id="code" name="code" type="text" inputmode="numeric"
+                           pattern="[0-9]{6}" maxlength="6" placeholder="6 位数字" required autofocus>
+                </div>
+                <button class="btn btn-primary w-100" type="submit">绑定并启用</button>
+            </form>
+        </th:block>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>
