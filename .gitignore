@@ -10,6 +10,12 @@ docs-zh/
 /data/
 deploy/data/
 
+# ===== 密钥文件（只保留模板与说明） =====
+secrets/**
+!secrets/**/
+!secrets/**/*.example
+!secrets/README.md
+
 # ===== Java / Maven =====
 target/
 *.class

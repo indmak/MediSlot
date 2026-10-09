@@ -5,10 +5,13 @@
 #   - 应用只绑定 127.0.0.1:8080，由宝塔 Nginx 反向代理 + SSL
 #   - MySQL 数据落盘到 ./data/mysql，容器重建不丢数据
 #
+# 密钥注入方式：挂载文件（./secrets -> /run/secrets），**不使用环境变量**，
+#   因此 docker inspect / printenv 看不到密码；详见 secrets/README.md。
+#
 # 使用：
-#   cp .env.prod.example .env.prod          # 修改其中的密码
-#   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
-#   docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f app
+#   1) 按 secrets/README.md 创建 secrets/ 下的密钥文件
+#   2) docker compose -f docker-compose.prod.yml up -d --build
+#   3) docker compose -f docker-compose.prod.yml logs -f app
 # =============================================================
 name: medislot
 
@@ -18,10 +21,11 @@ services:
     container_name: medislot-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      # 仅传递文件路径，密码值本身来自挂载文件
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
       MYSQL_DATABASE: medislot_db
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USER:-medislot}
       TZ: Asia/Shanghai
     command:
       - --character-set-server=utf8mb4
@@ -29,9 +33,10 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./secrets:/run/secrets:ro
     # 不映射宿主机端口：数据库仅对本编排内的应用容器可见
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$(cat /run/secrets/db_root_password)\" --silent"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -52,15 +57,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # 将 .env.prod 中所有变量注入容器（外部 API 密钥、管理员账号覆盖等）
-    env_file:
-      - .env.prod
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/medislot_db?serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: ${DB_USER}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-medislot}
+      # 数据库密码来自 configtree（/run/secrets/db_password），不在此处设置
       TZ: Asia/Shanghai
+    volumes:
+      - ./secrets:/run/secrets:ro
     ports:
       # 仅绑定回环地址，交给宝塔 Nginx 反向代理（避免直接暴露 8080）
       - "127.0.0.1:${APP_PORT:-8080}:8080"
