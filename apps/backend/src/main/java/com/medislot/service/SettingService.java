@@ -25,6 +25,8 @@ public class SettingService {
         DEFAULTS.put("consultation.max-messages", "30");
         DEFAULTS.put("consultation.rate-limit-seconds", "3");
         DEFAULTS.put("consultation.max-history", "20");
+        DEFAULTS.put("kb.consultation.auto-sync", "true");
+        DEFAULTS.put("kb.consultation.min-messages", "4");
     }
 
     public SettingService(AppSettingRepository repository) {

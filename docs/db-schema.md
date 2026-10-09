@@ -126,6 +126,7 @@
 | status | VARCHAR(20) | NOT NULL | `ACTIVE` / `CLOSED` |
 | ai_model | VARCHAR(50) | | 使用的模型 |
 | summary | VARCHAR(2000) | | AI 生成的问诊摘要 |
+| kb_document_id | BIGINT | | 已归档进知识库的文档 id（幂等；`-1` 表示已扫描但内容不足） |
 | created_at / updated_at / closed_at | DATETIME | | |
 
 唯一约束：`(appointment_id, scope)`。
@@ -201,14 +202,15 @@
 ### knowledge_document（知识库文档）
 
 RAG 知识库的文档元数据。切分片段与向量由 Spring AI 的 `vector_store` 表管理
-（metadata 含 `documentId` / `title` / `chunkIndex`），维度 1024（智谱 `embedding-3`）。
+（metadata 含 `documentId` / `title` / `visibility` / `sourceType` / `chunkIndex`），
+维度 1024（智谱 `embedding-3`）。
 
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
 | id | BIGINT | PK, auto | 主键 |
 | title | VARCHAR(200) | NOT NULL | 标题 |
 | original_filename | VARCHAR(255) | | 原始文件名 |
-| stored_name | VARCHAR(100) | NOT NULL | 存储文件名（UUID） |
+| stored_name | VARCHAR(100) | NOT NULL | 存储路径（相对 `medislot.kb.dir`，含子目录） |
 | content_type | VARCHAR(100) | | MIME 类型 |
 | size | BIGINT | NOT NULL | 字节数（上限 20MB） |
 | status | VARCHAR(20) | NOT NULL | `PENDING`/`PROCESSING`/`READY`/`FAILED` |
@@ -216,11 +218,33 @@ RAG 知识库的文档元数据。切分片段与向量由 Spring AI 的 `vector
 | error_message | VARCHAR(500) | | 失败原因 |
 | category | VARCHAR(50) | | 分类（如科室） |
 | uploaded_by | BIGINT | | 上传者 user_id |
+| source_id | BIGINT | FK→knowledge_source | 来源 |
+| source_type | VARCHAR(20) | | `MANUAL`/`CONSULTATION`/`EXTERNAL_API`（冗余） |
+| source_url | VARCHAR(1000) | | 外部来源原始链接（去重） |
+| content_hash | VARCHAR(64) | | 内容 SHA-256（去重） |
+| visibility | VARCHAR(20) | NOT NULL, default `PUBLIC` | `PUBLIC` 任何人可检索；`PRIVATE` 仅医生/管理员问答可见 |
 | created_at / updated_at | DATETIME | | |
 
 > `vector_store` 由 Spring AI PgVectorStore 创建（`embedding vector(1024)` + HNSW 索引）。
-> 原始文件落盘在 `medislot.kb.dir`（容器内 `/app/uploads/kb`）。
+> 原始文件落盘在 `medislot.kb.dir`（容器内 `/app/uploads/kb`，按来源分子目录 `manual/`、`consultations/`）。
 > 管理员可在「设置中心」用 `rag.enabled` / `rag.top-k` / `rag.max-context-chars` 控制检索增强。
+
+### knowledge_source（知识库来源）
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | BIGINT | PK, auto | 主键 |
+| name | VARCHAR(100) | UNIQUE, NOT NULL | 来源名 |
+| type | VARCHAR(20) | NOT NULL | `MANUAL`/`CONSULTATION`/`EXTERNAL_API` |
+| description | VARCHAR(500) | | 说明 |
+| enabled | BOOLEAN | NOT NULL | 是否启用 |
+| config_json | VARCHAR(4000) | | 外部接口抓取配置（下一阶段） |
+| schedule_cron | VARCHAR(50) | | 定时表达式（可选） |
+| last_sync_at | DATETIME | | 上次同步时间 |
+| last_sync_status / last_sync_message | | | 上次同步结果 |
+| created_at / updated_at | DATETIME | | |
+
+> 三条内置来源启动时幂等写入。诊前咨询来源归档的文档为 `PRIVATE`，患者侧检索不会命中（见 `docs/rag.md`）。
 
 ## 预约状态机
 

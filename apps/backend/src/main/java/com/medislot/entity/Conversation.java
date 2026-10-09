@@ -53,6 +53,10 @@ public class Conversation {
     @Column(length = 2000)
     private String summary;
 
+    /** 已入知识库时对应的文档 id（幂等标记，避免重复入库）。 */
+    @Column(name = "kb_document_id")
+    private Long kbDocumentId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -127,6 +131,14 @@ public class Conversation {
 
     public void setSummary(String summary) {
         this.summary = summary;
+    }
+
+    public Long getKbDocumentId() {
+        return kbDocumentId;
+    }
+
+    public void setKbDocumentId(Long kbDocumentId) {
+        this.kbDocumentId = kbDocumentId;
     }
 
     public LocalDateTime getCreatedAt() {

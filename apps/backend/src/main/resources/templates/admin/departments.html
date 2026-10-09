@@ -4,12 +4,12 @@
 <body>
 <nav th:replace="~{layout :: nav}"></nav>
 
+<nav th:replace="~{layout :: adminNav('departments')}"></nav>
+
 <main class="content-wrapper">
     <header class="page-header">
         <h1 class="page-title">科室管理</h1>
     </header>
-
-    <nav th:replace="~{layout :: adminNav('departments')}"></nav>
 
     <div class="alert alert-success" th:if="${message}" th:text="${message}">科室已添加</div>
 

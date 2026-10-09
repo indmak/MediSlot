@@ -4,13 +4,13 @@
 <body>
 <nav th:replace="~{layout :: nav}"></nav>
 
+<nav th:replace="~{layout :: adminNav('dashboard')}"></nav>
+
 <main class="content-wrapper">
     <header class="page-header">
         <h1 class="page-title">管理后台</h1>
         <p class="page-subtitle">诊所运营总览</p>
     </header>
-
-    <nav th:replace="~{layout :: adminNav('dashboard')}"></nav>
 
     <div class="stat-grid">
         <div class="stat-card">

@@ -3,12 +3,15 @@ package com.medislot.config;
 import com.medislot.entity.AppSetting;
 import com.medislot.entity.Department;
 import com.medislot.entity.Doctor;
+import com.medislot.entity.KnowledgeSource;
+import com.medislot.entity.KnowledgeSourceType;
 import com.medislot.entity.Role;
 import com.medislot.entity.Schedule;
 import com.medislot.entity.User;
 import com.medislot.repository.AppSettingRepository;
 import com.medislot.repository.DepartmentRepository;
 import com.medislot.repository.DoctorRepository;
+import com.medislot.repository.KnowledgeSourceRepository;
 import com.medislot.repository.ScheduleRepository;
 import com.medislot.repository.UserRepository;
 import org.slf4j.Logger;
@@ -44,6 +47,7 @@ public class DataInitializer implements CommandLineRunner {
     private final DoctorRepository doctorRepository;
     private final ScheduleRepository scheduleRepository;
     private final AppSettingRepository appSettingRepository;
+    private final KnowledgeSourceRepository knowledgeSourceRepository;
     private final PasswordEncoder passwordEncoder;
 
     private final boolean seedEnabled;
@@ -55,6 +59,7 @@ public class DataInitializer implements CommandLineRunner {
                            DoctorRepository doctorRepository,
                            ScheduleRepository scheduleRepository,
                            AppSettingRepository appSettingRepository,
+                           KnowledgeSourceRepository knowledgeSourceRepository,
                            PasswordEncoder passwordEncoder,
                            @Value("${medislot.seed.enabled:false}") boolean seedEnabled,
                            @Value("${medislot.admin.phone:13000000000}") String adminPhone,
@@ -64,6 +69,7 @@ public class DataInitializer implements CommandLineRunner {
         this.doctorRepository = doctorRepository;
         this.scheduleRepository = scheduleRepository;
         this.appSettingRepository = appSettingRepository;
+        this.knowledgeSourceRepository = knowledgeSourceRepository;
         this.passwordEncoder = passwordEncoder;
         this.seedEnabled = seedEnabled;
         this.adminPhone = adminPhone;
@@ -74,12 +80,30 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         ensureAdmin();
         ensureKbMaintainer();
+        ensureKnowledgeSources();
         ensureSettings();
         if (seedEnabled) {
             seedDemoData();
         } else {
             log.info("[init] 演示数据未启用（medislot.seed.enabled=false）");
         }
+    }
+
+    /** 幂等地保证三条内置知识库来源。 */
+    private void ensureKnowledgeSources() {
+        upsertSource(KnowledgeSourceType.MANUAL, "人工上传", "维护员手动上传的文档（PDF / Word / Markdown / txt）", true);
+        upsertSource(KnowledgeSourceType.CONSULTATION, "诊前咨询记录",
+                "由已关闭的问诊会话自动生成（脱敏后，仅医生/管理员可检索）", true);
+        upsertSource(KnowledgeSourceType.EXTERNAL_API, "外部知识接口",
+                "第三方数据源 API 批量导入（下一阶段接入）", false);
+    }
+
+    private void upsertSource(KnowledgeSourceType type, String name, String description, boolean enabled) {
+        if (knowledgeSourceRepository.findByType(type).isPresent()) {
+            return;
+        }
+        knowledgeSourceRepository.save(new KnowledgeSource(name, type, description, enabled));
+        log.info("[init] 已内置知识库来源：{}（{}）", name, type);
     }
 
     /** 幂等地保证存在一个知识库维护员账号。 */
@@ -101,6 +125,8 @@ public class DataInitializer implements CommandLineRunner {
         defaults.put("rag.enabled", new String[]{"true", "诊前咨询是否使用知识库检索增强"});
         defaults.put("rag.top-k", new String[]{"3", "知识库检索返回条数"});
         defaults.put("rag.max-context-chars", new String[]{"2000", "注入提示词的知识库文本上限"});
+        defaults.put("kb.consultation.auto-sync", new String[]{"true", "是否自动把已关闭的问诊会话写入知识库"});
+        defaults.put("kb.consultation.min-messages", new String[]{"4", "问诊会话至少多少条消息才生成知识库文档"});
         defaults.forEach((key, value) -> {
             if (appSettingRepository.findById(key).isEmpty()) {
                 appSettingRepository.save(new AppSetting(key, value[0], value[1]));

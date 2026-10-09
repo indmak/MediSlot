@@ -4,12 +4,12 @@
 <body>
 <nav th:replace="~{layout :: nav}"></nav>
 
+<nav th:replace="~{layout :: adminNav('doctors')}"></nav>
+
 <main class="content-wrapper content-wrapper--narrow">
     <header class="page-header">
         <h1 class="page-title">编辑医生</h1>
     </header>
-
-    <nav th:replace="~{layout :: adminNav('doctors')}"></nav>
 
     <div class="card form-card">
         <form th:action="@{/admin/doctors/{id}(id=${doctorId})}" th:object="${form}" method="post" class="row g-3">

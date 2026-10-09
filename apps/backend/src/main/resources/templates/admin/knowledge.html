@@ -4,13 +4,13 @@
 <body>
 <nav th:replace="~{layout :: nav}"></nav>
 
+<nav th:replace="~{layout :: adminNav('knowledge')}"></nav>
+
 <main class="content-wrapper">
     <header class="page-header">
         <h1 class="page-title">知识库</h1>
         <p class="page-subtitle">上传医疗资料（PDF / Word / Markdown / txt），自动解析、切分、向量化，供 AI 检索</p>
     </header>
-
-    <nav th:replace="~{layout :: adminNav('knowledge')}"></nav>
 
     <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
     <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
@@ -38,19 +38,35 @@
         <p class="page-subtitle" style="margin-top:10px">
             单文件上限 20MB。索引为同步执行，较大文件可能需要数十秒。
             <a th:href="@{/admin/knowledge/ask}">→ 知识库问答</a>
+            <a th:href="@{/admin/knowledge/sources}" class="ms-3">→ 来源管理</a>
         </p>
     </div>
+
+    <form method="get" th:action="@{/admin/knowledge}" class="d-flex align-items-center gap-2 mb-3">
+        <label class="form-label mb-0" for="sourceId">按来源筛选</label>
+        <select class="form-select" id="sourceId" name="sourceId" style="max-width:240px"
+                onchange="this.form.submit()">
+            <option value="">全部来源</option>
+            <option th:each="s : ${sources}" th:value="${s.id}" th:text="${s.name}"
+                    th:selected="${selectedSourceId != null and selectedSourceId == s.id}"></option>
+        </select>
+    </form>
 
     <div class="card">
         <table class="table ms-table">
             <thead>
             <tr>
-                <th>标题</th><th>分类</th><th>状态</th><th>片段</th><th>大小</th><th>更新时间</th><th></th>
+                <th>标题</th><th>来源</th><th>分类</th><th>状态</th><th>片段</th><th>大小</th><th>更新时间</th><th></th>
             </tr>
             </thead>
             <tbody>
             <tr th:each="d : ${documents}">
-                <td th:text="${d.title}">标题</td>
+                <td>
+                    <span th:text="${d.title}">标题</span>
+                    <span class="badge-status badge-cancelled" th:if="${d.visibility != null and d.visibility.name() == 'PRIVATE'}"
+                          title="仅医生/管理员可见">私有</span>
+                </td>
+                <td th:text="${d.sourceType != null ? d.sourceType.label : '-'}">-</td>
                 <td th:text="${d.category != null ? d.category : '-'}">-</td>
                 <td>
                     <span class="badge-status"
@@ -71,7 +87,7 @@
                 </td>
             </tr>
             <tr th:if="${#lists.isEmpty(documents)}">
-                <td colspan="7" class="text-center text-muted">还没有文档，先上传一份吧</td>
+                <td colspan="8" class="text-center text-muted">还没有文档，先上传一份吧</td>
             </tr>
             </tbody>
         </table>

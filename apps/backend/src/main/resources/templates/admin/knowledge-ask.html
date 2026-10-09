@@ -4,13 +4,13 @@
 <body>
 <nav th:replace="~{layout :: nav}"></nav>
 
+<nav th:replace="~{layout :: adminNav('knowledge')}"></nav>
+
 <main class="content-wrapper content-wrapper--narrow">
     <header class="page-header">
         <h1 class="page-title">知识库问答</h1>
         <p class="page-subtitle">基于已上传的知识库内容回答（检索增强）</p>
     </header>
-
-    <nav th:replace="~{layout :: adminNav('knowledge')}"></nav>
 
     <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
 

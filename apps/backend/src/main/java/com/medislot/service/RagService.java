@@ -38,16 +38,30 @@ public class RagService {
 
     @Transactional(readOnly = true)
     public List<Document> retrieve(String question, int topK) {
+        return retrieve(question, topK, true);
+    }
+
+    /**
+     * 检索知识库片段。
+     *
+     * @param includePrivate 是否包含 PRIVATE 文档（真实问诊记录等）。患者侧检索增强必须传
+     *                       {@code false}，只命中 PUBLIC 文档，避免跨患者泄漏。
+     */
+    @Transactional(readOnly = true)
+    public List<Document> retrieve(String question, int topK, boolean includePrivate) {
         VectorStore vectorStore = vectorStoreProvider.getIfAvailable();
         if (vectorStore == null || question == null || question.isBlank()) {
             return List.of();
         }
         int k = topK > 0 ? topK : 4;
-        return vectorStore.similaritySearch(SearchRequest.builder()
+        SearchRequest.Builder builder = SearchRequest.builder()
                 .query(question)
                 .topK(k)
-                .similarityThreshold(0.0)
-                .build());
+                .similarityThreshold(0.0);
+        if (!includePrivate) {
+            builder.filterExpression("visibility == 'PUBLIC'");
+        }
+        return vectorStore.similaritySearch(builder.build());
     }
 
     /** 为诊前咨询构建知识库参考上下文；关闭或无命中时返回空串。 */
@@ -59,7 +73,7 @@ public class RagService {
         if (topK <= 0) {
             topK = 3;
         }
-        List<Document> docs = retrieve(query, topK);
+        List<Document> docs = retrieve(query, topK, false);
         if (docs.isEmpty()) {
             return "";
         }

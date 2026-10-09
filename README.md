@@ -67,8 +67,9 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 **Knowledge base (RAG)**
 
 - A **KB_MAINTAINER** role plus admin UI (`/admin/knowledge`) to upload, re-index and delete knowledge documents. Admin creates maintainer accounts in `/admin/accounts`.
+- **Sources** (`/admin/knowledge/sources`): manual uploads; **consultation records auto-archived to Markdown** from closed sessions (anonymised, private, scheduled + manual sync); and a configurable external-API puller (next phase).
 - Documents are parsed (Apache Tika), chunked, embedded via **Zhipu `embedding-3`**, and stored in **pgvector** through Spring AI. Doctors/admins can ask the KB in natural language.
-- The pre-consultation AI is **grounded with retrieved KB snippets** (toggle + top-k configurable in the admin settings center).
+- The pre-consultation AI is **grounded with retrieved KB snippets** (toggle + top-k configurable in the admin settings center). Chunks carry a `visibility` flag, so patient-side grounding only sees `PUBLIC` documents — private consultation records can never leak across patients.
 - Powered by the **DeepSeek** API (`deepseek-flash` by default, OpenAI-compatible). The API key is injected as a mounted secret, never in code or env vars. Without a key the app falls back to a built-in mock so the flow still works.
 
 **Security**

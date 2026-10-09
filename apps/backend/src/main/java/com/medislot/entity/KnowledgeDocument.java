@@ -57,6 +57,29 @@ public class KnowledgeDocument {
     @Column(name = "uploaded_by")
     private Long uploadedBy;
 
+    /** 来源 id（knowledge_source）。 */
+    @Column(name = "source_id")
+    private Long sourceId;
+
+    /** 来源类型（冗余存储，便于筛选与可见性判断）。 */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source_type", length = 20)
+    private KnowledgeSourceType sourceType;
+
+    /** 外部来源的原始链接（去重用）。 */
+    @Column(name = "source_url", length = 1000)
+    private String sourceUrl;
+
+    /** 内容哈希（SHA-256，去重）。 */
+    @Column(name = "content_hash", length = 64)
+    private String contentHash;
+
+    /** 可见范围：PUBLIC 任何人可检索；PRIVATE 仅医生/管理员/维护员问答可见。 */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibility", nullable = false, length = 20,
+            columnDefinition = "varchar(20) not null default 'PUBLIC'")
+    private KnowledgeVisibility visibility = KnowledgeVisibility.PUBLIC;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -153,6 +176,46 @@ public class KnowledgeDocument {
 
     public Long getUploadedBy() {
         return uploadedBy;
+    }
+
+    public Long getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(Long sourceId) {
+        this.sourceId = sourceId;
+    }
+
+    public KnowledgeSourceType getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(KnowledgeSourceType sourceType) {
+        this.sourceType = sourceType;
+    }
+
+    public String getSourceUrl() {
+        return sourceUrl;
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
+    }
+
+    public String getContentHash() {
+        return contentHash;
+    }
+
+    public void setContentHash(String contentHash) {
+        this.contentHash = contentHash;
+    }
+
+    public KnowledgeVisibility getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(KnowledgeVisibility visibility) {
+        this.visibility = visibility;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -49,19 +49,22 @@
     </div>
 </nav>
 
-<!-- 管理后台子导航 -->
+<!-- 管理后台子导航（整宽二级导航条） -->
 <nav th:fragment="adminNav(active)" class="admin-nav" aria-label="管理后台导航">
-    <th:block sec:authorize="hasRole('ADMIN')">
-        <a th:href="@{/admin}" th:classappend="${active == 'dashboard' ? 'active' : ''}">仪表盘</a>
-        <a th:href="@{/admin/departments}" th:classappend="${active == 'departments' ? 'active' : ''}">科室</a>
-        <a th:href="@{/admin/doctors}" th:classappend="${active == 'doctors' ? 'active' : ''}">医生</a>
-        <a th:href="@{/admin/schedules}" th:classappend="${active == 'schedules' ? 'active' : ''}">排班</a>
-    </th:block>
-    <a th:href="@{/admin/knowledge}" th:classappend="${active == 'knowledge' ? 'active' : ''}">知识库</a>
-    <th:block sec:authorize="hasRole('ADMIN')">
-        <a th:href="@{/admin/accounts}" th:classappend="${active == 'accounts' ? 'active' : ''}">账号</a>
-        <a th:href="@{/admin/settings}" th:classappend="${active == 'settings' ? 'active' : ''}">设置</a>
-    </th:block>
+    <div class="content-wrapper admin-nav__inner">
+        <th:block sec:authorize="hasRole('ADMIN')">
+            <a th:href="@{/admin}" th:classappend="${active == 'dashboard' ? 'active' : ''}">仪表盘</a>
+            <a th:href="@{/admin/departments}" th:classappend="${active == 'departments' ? 'active' : ''}">科室</a>
+            <a th:href="@{/admin/doctors}" th:classappend="${active == 'doctors' ? 'active' : ''}">医生</a>
+            <a th:href="@{/admin/schedules}" th:classappend="${active == 'schedules' ? 'active' : ''}">排班</a>
+        </th:block>
+        <a th:href="@{/admin/knowledge}" th:classappend="${active == 'knowledge' ? 'active' : ''}">知识库</a>
+        <a th:href="@{/admin/knowledge/sources}" th:classappend="${active == 'sources' ? 'active' : ''}">来源</a>
+        <th:block sec:authorize="hasRole('ADMIN')">
+            <a th:href="@{/admin/accounts}" th:classappend="${active == 'accounts' ? 'active' : ''}">账号</a>
+            <a th:href="@{/admin/settings}" th:classappend="${active == 'settings' ? 'active' : ''}">设置</a>
+        </th:block>
+    </div>
 </nav>
 
 <!-- 医生卡片网格（首页 / 医生列表共用） -->

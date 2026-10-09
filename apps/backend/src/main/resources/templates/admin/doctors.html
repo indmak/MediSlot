@@ -4,13 +4,13 @@
 <body>
 <nav th:replace="~{layout :: nav}"></nav>
 
+<nav th:replace="~{layout :: adminNav('doctors')}"></nav>
+
 <main class="content-wrapper">
     <header class="page-header">
         <h1 class="page-title">医生管理</h1>
         <p class="page-subtitle">共 <span th:text="${#lists.size(doctors)}">5</span> 位医生</p>
     </header>
-
-    <nav th:replace="~{layout :: adminNav('doctors')}"></nav>
 
     <div class="alert alert-success" th:if="${message}" th:text="${message}">医生已添加</div>
 

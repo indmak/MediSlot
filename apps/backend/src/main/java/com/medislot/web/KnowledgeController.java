@@ -4,6 +4,7 @@ import com.medislot.dto.KnowledgeAnswer;
 import com.medislot.entity.User;
 import com.medislot.exception.BusinessException;
 import com.medislot.service.KnowledgeService;
+import com.medislot.service.KnowledgeSourceService;
 import com.medislot.service.RagService;
 import com.medislot.service.UserService;
 import org.springframework.security.core.Authentication;
@@ -25,20 +26,25 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class KnowledgeController {
 
     private final KnowledgeService knowledgeService;
+    private final KnowledgeSourceService sourceService;
     private final RagService ragService;
     private final UserService userService;
 
     public KnowledgeController(KnowledgeService knowledgeService,
+                               KnowledgeSourceService sourceService,
                                RagService ragService,
                                UserService userService) {
         this.knowledgeService = knowledgeService;
+        this.sourceService = sourceService;
         this.ragService = ragService;
         this.userService = userService;
     }
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("documents", knowledgeService.list());
+    public String list(@RequestParam(required = false) Long sourceId, Model model) {
+        model.addAttribute("documents", knowledgeService.listBySource(sourceId));
+        model.addAttribute("sources", sourceService.list());
+        model.addAttribute("selectedSourceId", sourceId);
         model.addAttribute("ragAvailable", ragService.isAvailable());
         return "admin/knowledge";
     }

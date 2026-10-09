@@ -4,13 +4,13 @@
 <body>
 <nav th:replace="~{layout :: nav}"></nav>
 
+<nav th:replace="~{layout :: adminNav('accounts')}"></nav>
+
 <main class="content-wrapper">
     <header class="page-header">
         <h1 class="page-title">账号管理</h1>
         <p class="page-subtitle">管理员 / 知识库维护员账号</p>
     </header>
-
-    <nav th:replace="~{layout :: adminNav('accounts')}"></nav>
 
     <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
 

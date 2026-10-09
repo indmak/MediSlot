@@ -166,21 +166,26 @@
 
 /* ===== 管理后台 ===== */
 .admin-nav {
+    background: var(--medislot-surface);
+    border-bottom: 1px solid var(--medislot-border);
+}
+
+.admin-nav__inner {
     display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    padding: 4px;
-    background: #EEF0F3;
-    border-radius: var(--radius-input);
-    margin-bottom: var(--space-5);
-    width: fit-content;
+    align-items: center;
+    gap: var(--space-5);
+    height: 48px;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .admin-nav a {
-    padding: 8px 18px;
-    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    height: 48px;
     font-size: 14px;
     color: var(--medislot-text-secondary);
+    border-bottom: 2px solid transparent;
 }
 
 .admin-nav a:hover {
@@ -188,9 +193,9 @@
 }
 
 .admin-nav a.active {
-    background: var(--medislot-surface);
     color: var(--medislot-primary);
     font-weight: 500;
+    border-bottom-color: var(--medislot-primary);
 }
 
 .stat-grid {
