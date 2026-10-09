@@ -65,7 +65,8 @@ public class DoctorService {
                         d.getName(),
                         d.getUser().getPhone(),
                         d.getTitle(),
-                        d.getDepartment().getName()))
+                        d.getDepartment().getName(),
+                        d.getRegistrationFee()))
                 .toList();
     }
 
@@ -99,6 +100,7 @@ public class DoctorService {
         Doctor doctor = new Doctor(user, department, form.getTitle(), form.getBio());
         doctor.setRating(new BigDecimal("5.0"));
         doctor.setAppointmentCount(0);
+        doctor.setRegistrationFee(form.getRegistrationFee());
         return doctorRepository.save(doctor);
     }
 
@@ -113,6 +115,7 @@ public class DoctorService {
         doctor.setDepartment(department);
         doctor.setTitle(form.getTitle());
         doctor.setBio(form.getBio());
+        doctor.setRegistrationFee(form.getRegistrationFee());
         doctor.getUser().setName(form.getName());
         doctorRepository.save(doctor);
     }
@@ -131,6 +134,7 @@ public class DoctorService {
                 doctor.getRating(),
                 doctor.getAppointmentCount(),
                 doctor.getAvatarUrl(),
+                doctor.getRegistrationFee(),
                 remainingToday > 0,
                 remainingToday
         );

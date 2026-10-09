@@ -21,6 +21,7 @@
             2026年10月15日 星期三 · 09:00 - 09:30
         </p>
         <span class="badge-status badge-available" th:text="${'剩余 ' + schedule.remaining + ' 个号'}">剩余 3 个号</span>
+        <p class="summary-line" th:text="${'挂号费 ¥' + schedule.doctor.registrationFee}">挂号费 ¥30.00</p>
     </section>
 
     <form class="card form-card" th:action="@{/appointments}" th:object="${form}" method="post">

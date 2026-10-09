@@ -9,6 +9,9 @@
         <h1 class="page-title">我的预约</h1>
     </header>
 
+    <div class="alert alert-success" th:if="${message}" th:text="${message}">支付成功</div>
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}">支付失败</div>
+
     <ul class="nav segmented" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-pending"
@@ -31,6 +34,7 @@
     </ul>
 
     <div class="tab-content">
+        <!-- 待就诊 -->
         <div class="tab-pane fade show active" id="tab-pending" role="tabpanel">
             <div th:if="${#lists.isEmpty(pending)}" class="empty-state">
                 <i class="bi bi-calendar-x empty-state__icon"></i>
@@ -46,14 +50,21 @@
                             <span class="dot">·</span>
                             <span th:text="${a.schedule.doctor.department.name}">内科</span>
                             <span class="badge-status badge-pending">待就诊</span>
+                            <span class="badge-status" th:if="${a.payment != null}"
+                                  th:classappend="${a.payment.status.name() == 'PAID' ? 'badge-completed' : 'badge-pending'}"
+                                  th:text="${a.payment.status.label}">待支付</span>
                         </div>
                         <div class="appt-card__meta"
                              th:text="${#temporals.format(a.schedule.date,'M月d日 EEE')} + ' ' + ${#temporals.format(a.schedule.startTime,'HH:mm')} + ' - ' + ${#temporals.format(a.schedule.endTime,'HH:mm')}">
                             10月15日 周三 09:00 - 09:30
                         </div>
                         <div class="appt-card__no" th:text="${'预约编号 ' + a.appointmentNo}">预约编号 A20261015-003</div>
+                        <div class="appt-card__no" th:text="${'挂号费 ¥' + a.registrationFee}">挂号费 ¥30.00</div>
                     </div>
                     <div class="appt-card__actions">
+                        <a class="btn btn-primary btn-sm"
+                           th:if="${a.payment != null and a.payment.status.name() == 'UNPAID'}"
+                           th:href="@{/payments/{no}(no=${a.payment.paymentNo})}">去支付</a>
                         <form th:action="@{/appointments/{id}/cancel(id=${a.id})}" method="post">
                             <button class="btn btn-danger-outline btn-sm" type="submit">取消预约</button>
                         </form>
@@ -62,6 +73,7 @@
             </div>
         </div>
 
+        <!-- 已完成 -->
         <div class="tab-pane fade" id="tab-completed" role="tabpanel">
             <div th:if="${#lists.isEmpty(completed)}" class="empty-state">
                 <i class="bi bi-journal-check empty-state__icon"></i>
@@ -78,6 +90,7 @@
                              th:text="${#temporals.format(a.schedule.date,'yyyy年M月d日')} + ' ' + ${#temporals.format(a.schedule.startTime,'HH:mm')}">
                             2026年10月15日 09:00
                         </div>
+                        <div class="appt-card__no" th:text="${'挂号费 ¥' + a.registrationFee}">挂号费 ¥30.00</div>
                         <div class="appt-card__no" th:if="${a.diagnosisNote != null}"
                              th:text="${'诊断：' + a.diagnosisNote}">诊断：...</div>
                     </div>
@@ -85,6 +98,7 @@
             </div>
         </div>
 
+        <!-- 已取消 -->
         <div class="tab-pane fade" id="tab-cancelled" role="tabpanel">
             <div th:if="${#lists.isEmpty(cancelled)}" class="empty-state">
                 <i class="bi bi-slash-circle empty-state__icon"></i>
@@ -96,11 +110,15 @@
                         <div class="appt-card__name">
                             <span th:text="${a.schedule.doctor.name}">张明华</span>
                             <span class="badge-status badge-cancelled">已取消</span>
+                            <span class="badge-status" th:if="${a.payment != null}"
+                                  th:classappend="${a.payment.status.name() == 'REFUNDED' ? 'badge-full' : 'badge-cancelled'}"
+                                  th:text="${a.payment.status.label}">已退款</span>
                         </div>
                         <div class="appt-card__meta"
                              th:text="${#temporals.format(a.schedule.date,'yyyy年M月d日')} + ' ' + ${#temporals.format(a.schedule.startTime,'HH:mm')}">
                             2026年10月15日 09:00
                         </div>
+                        <div class="appt-card__no" th:text="${'挂号费 ¥' + a.registrationFee}">挂号费 ¥30.00</div>
                     </div>
                 </div>
             </div>

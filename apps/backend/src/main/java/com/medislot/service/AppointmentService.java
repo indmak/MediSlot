@@ -29,15 +29,18 @@ public class AppointmentService {
     private final ScheduleRepository scheduleRepository;
     private final DoctorRepository doctorRepository;
     private final UserService userService;
+    private final PaymentService paymentService;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
                               ScheduleRepository scheduleRepository,
                               DoctorRepository doctorRepository,
-                              UserService userService) {
+                              UserService userService,
+                              PaymentService paymentService) {
         this.appointmentRepository = appointmentRepository;
         this.scheduleRepository = scheduleRepository;
         this.doctorRepository = doctorRepository;
         this.userService = userService;
+        this.paymentService = paymentService;
     }
 
     /**
@@ -72,7 +75,12 @@ public class AppointmentService {
 
         String no = generateAppointmentNo(schedule.getDate());
         Appointment appointment = new Appointment(no, schedule, patient, form.getReason());
-        return appointmentRepository.save(appointment);
+        // 挂号费快照
+        appointment.setRegistrationFee(schedule.getDoctor().getRegistrationFee());
+        Appointment saved = appointmentRepository.save(appointment);
+        // 创建待支付订单（30 分钟内未支付则作废、释放号源）
+        paymentService.createForAppointment(saved);
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -104,6 +112,8 @@ public class AppointmentService {
             scheduleRepository.save(schedule);
         }
         appointmentRepository.save(appointment);
+        // 已支付→自动退款；未支付→订单作废
+        paymentService.voidOrRefund(appointment);
     }
 
     // ===== 医生端 =====

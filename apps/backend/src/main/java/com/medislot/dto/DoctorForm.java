@@ -1,9 +1,12 @@
 package com.medislot.dto;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
 
 /**
  * 管理员新增 / 编辑医生表单。
@@ -31,6 +34,11 @@ public class DoctorForm {
 
     @Size(max = 1000, message = "简介过长")
     private String bio;
+
+    /** 挂号费（元）。 */
+    @NotNull(message = "请填写挂号费")
+    @DecimalMin(value = "0.00", message = "挂号费不能为负")
+    private BigDecimal registrationFee = BigDecimal.ZERO;
 
     public String getName() {
         return name;
@@ -78,5 +86,13 @@ public class DoctorForm {
 
     public void setBio(String bio) {
         this.bio = bio;
+    }
+
+    public BigDecimal getRegistrationFee() {
+        return registrationFee;
+    }
+
+    public void setRegistrationFee(BigDecimal registrationFee) {
+        this.registrationFee = registrationFee;
     }
 }

@@ -13,6 +13,7 @@ public record DoctorCard(
         BigDecimal rating,
         Integer appointmentCount,
         String avatarUrl,
+        BigDecimal registrationFee,
         boolean hasAvailableSlot,
         int remainingToday
 ) {

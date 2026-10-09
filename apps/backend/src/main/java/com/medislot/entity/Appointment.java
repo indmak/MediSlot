@@ -10,10 +10,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -47,6 +49,13 @@ public class Appointment {
 
     @Column(name = "diagnosis_note", length = 500)
     private String diagnosisNote;
+
+    /** 挂号费快照（下单时医生的挂号费，之后医生改价不影响历史）。 */
+    @Column(name = "registration_fee", precision = 8, scale = 2)
+    private BigDecimal registrationFee;
+
+    @OneToOne(mappedBy = "appointment", fetch = FetchType.LAZY)
+    private Payment payment;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -128,6 +137,22 @@ public class Appointment {
 
     public void setDiagnosisNote(String diagnosisNote) {
         this.diagnosisNote = diagnosisNote;
+    }
+
+    public BigDecimal getRegistrationFee() {
+        return registrationFee;
+    }
+
+    public void setRegistrationFee(BigDecimal registrationFee) {
+        this.registrationFee = registrationFee;
+    }
+
+    public Payment getPayment() {
+        return payment;
+    }
+
+    public void setPayment(Payment payment) {
+        this.payment = payment;
     }
 
     public LocalDateTime getCreatedAt() {

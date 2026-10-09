@@ -34,6 +34,9 @@ medislot:
     # 内置管理员账号（幂等创建）；可用环境变量覆盖：MEDISLOT_ADMIN_PHONE / MEDISLOT_ADMIN_PASSWORD
     phone: 13000000000
     password: admin123
+  payment:
+    # 未支付订单的有效期（分钟），超时自动作废并释放号源
+    expiry-minutes: 30
 
 logging:
   level:

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('支付')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper content-wrapper--narrow">
+    <header class="page-header">
+        <h1 class="page-title">收银台</h1>
+        <p class="page-subtitle">模拟/沙箱支付，不会产生真实扣款</p>
+    </header>
+
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}">支付失败</div>
+
+    <section class="card summary-card">
+        <h2 class="section-title"
+            th:text="${payment.appointment.schedule.doctor.name} + ' · ' + ${payment.appointment.schedule.doctor.department.name}">
+            张明华 · 内科
+        </h2>
+        <p class="summary-line"
+           th:text="${#temporals.format(payment.appointment.schedule.date,'yyyy年M月d日 EEEE')} + ' ' + ${#temporals.format(payment.appointment.schedule.startTime,'HH:mm')} + ' - ' + ${#temporals.format(payment.appointment.schedule.endTime,'HH:mm')}">
+            2026年10月15日 星期三 09:00 - 09:30
+        </p>
+        <p class="summary-line" th:text="${'预约编号 ' + payment.appointment.appointmentNo}">预约编号 A20261015-003</p>
+
+        <div class="pay-amount">
+            <span class="pay-amount__label">应付挂号费</span>
+            <span class="pay-amount__value" th:text="${'¥' + payment.amount}">¥30.00</span>
+        </div>
+        <p class="summary-line"
+           th:if="${payment.status.name() == 'UNPAID'}"
+           th:text="${'请于 ' + #temporals.format(payment.expiresAt,'MM-dd HH:mm') + ' 前完成支付，逾期订单作废并释放号源'}">
+            请在有效期内完成支付
+        </p>
+        <span class="badge-status"
+              th:classappend="${payment.status.name() == 'PAID' ? 'badge-completed' : (payment.status.name() == 'UNPAID' ? 'badge-pending' : 'badge-cancelled')}"
+              th:text="${payment.status.label}">待支付</span>
+    </section>
+
+    <div class="card form-card" th:if="${payment.status.name() == 'UNPAID'}">
+        <div class="form-actions form-actions--center">
+            <form th:action="@{/payments/{no}/fail(no=${payment.paymentNo})}" method="post" class="d-inline">
+                <button class="btn btn-outline-primary" type="submit">模拟支付失败</button>
+            </form>
+            <form th:action="@{/payments/{no}/pay(no=${payment.paymentNo})}" method="post" class="d-inline">
+                <button class="btn btn-primary" type="submit">模拟支付成功</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="form-actions form-actions--center">
+        <a class="btn btn-outline-primary" th:href="@{/appointments/my}">返回我的预约</a>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

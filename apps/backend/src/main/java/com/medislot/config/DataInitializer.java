@@ -100,28 +100,29 @@ public class DataInitializer implements CommandLineRunner {
         // 患者
         userRepository.save(new User("13900000000", encode("patient123"), "王小明", Role.PATIENT));
 
-        // 5 位医生，分布在 5 个不同科室
+        // 5 位医生，分布在 5 个不同科室（各自挂号费不同）
         createDoctor("13800000001", "doctor123", "张明华", "副主任医师",
-                internal, "从事内科临床工作 15 年，擅长心血管与呼吸系统常见病。");
+                internal, "从事内科临床工作 15 年，擅长心血管与呼吸系统常见病。", new BigDecimal("30.00"));
         createDoctor("13800000002", "doctor123", "李建国", "主任医师",
-                surgery, "普外科主任，擅长微创手术与术后康复管理。");
+                surgery, "普外科主任，擅长微创手术与术后康复管理。", new BigDecimal("50.00"));
         createDoctor("13800000003", "doctor123", "王丽", "主治医师",
-                pediatrics, "儿科门诊医生，关注儿童常见病与生长发育。");
+                pediatrics, "儿科门诊医生，关注儿童常见病与生长发育。", new BigDecimal("20.00"));
         createDoctor("13800000004", "doctor123", "赵强", "副主任医师",
-                orthopedics, "骨科专家，擅长骨关节与运动损伤诊治。");
+                orthopedics, "骨科专家，擅长骨关节与运动损伤诊治。", new BigDecimal("30.00"));
         createDoctor("13800000005", "doctor123", "陈静", "主治医师",
-                ophthalmology, "眼科医生，擅长近视防控与干眼症治疗。");
+                ophthalmology, "眼科医生，擅长近视防控与干眼症治疗。", new BigDecimal("20.00"));
 
         seedSchedules(LocalDate.now(), 7);
         log.info("[seed] 完成：5 个科室 / 5 位医生 / 1 位患者。医生 13800000001/doctor123，患者 13900000000/patient123");
     }
 
     private void createDoctor(String phone, String rawPassword, String name, String title,
-                              Department department, String bio) {
+                              Department department, String bio, BigDecimal registrationFee) {
         User user = userRepository.save(new User(phone, encode(rawPassword), name, Role.DOCTOR));
         Doctor doctor = new Doctor(user, department, title, bio);
         doctor.setRating(BigDecimal.valueOf(4.7 + Math.random() * 0.2).setScale(1, RoundingMode.HALF_UP));
         doctor.setAppointmentCount(100 + (int) (Math.random() * 400));
+        doctor.setRegistrationFee(registrationFee);
         doctorRepository.save(doctor);
     }
 

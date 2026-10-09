@@ -46,6 +46,14 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 - Admins sign in through the same `/login` page and live in the unified `user` table (`role = ADMIN`) — no separate table or login URL.
 - A default admin account is created idempotently on startup (overridable via `MEDISLOT_ADMIN_PHONE` / `MEDISLOT_ADMIN_PASSWORD`).
 
+**Payment (simulated / sandbox)**
+
+- Each doctor has their own registration fee; the fee is snapshotted onto the appointment at booking time.
+- Booking creates an independent `payment` record (unpaid). The patient is sent to a checkout page and can pay within 30 minutes.
+- Unpaid orders are voided automatically after the deadline (a scheduled task cancels the appointment and releases the slot).
+- Cancelling a paid appointment triggers an automatic refund; cancelling an unpaid one voids the order.
+- No real gateway is wired yet — the checkout is a self-contained mock, so the flow can be swapped to Alipay sandbox/production later without touching the surrounding logic.
+
 ## Tech Stack
 
 | Layer | Technology |

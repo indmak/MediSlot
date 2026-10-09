@@ -47,6 +47,10 @@ public class Doctor {
     @Column(name = "appointment_count", nullable = false)
     private Integer appointmentCount = 0;
 
+    /** 挂号费（元）。 */
+    @Column(name = "registration_fee", nullable = false, precision = 8, scale = 2)
+    private BigDecimal registrationFee = BigDecimal.ZERO;
+
     protected Doctor() {
     }
 
@@ -115,6 +119,14 @@ public class Doctor {
 
     public void setAppointmentCount(Integer appointmentCount) {
         this.appointmentCount = appointmentCount;
+    }
+
+    public BigDecimal getRegistrationFee() {
+        return registrationFee;
+    }
+
+    public void setRegistrationFee(BigDecimal registrationFee) {
+        this.registrationFee = registrationFee;
     }
 
     /** 便捷方法：医生姓名来自关联的 User。 */

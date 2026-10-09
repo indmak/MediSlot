@@ -102,6 +102,29 @@
     margin-bottom: var(--space-5);
 }
 
+/* 收银台金额 */
+.pay-amount {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin: var(--space-4) 0;
+    padding: var(--space-4) 0;
+    border-top: 1px solid var(--medislot-border);
+    border-bottom: 1px solid var(--medislot-border);
+}
+
+.pay-amount__label {
+    font-size: 14px;
+    color: var(--medislot-text-secondary);
+}
+
+.pay-amount__value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--medislot-primary);
+}
+
 /* 手机端：导航精简、卡片单列、按钮全宽（提交场景） */
 @media (max-width: 575.98px) {
     .content-wrapper {
