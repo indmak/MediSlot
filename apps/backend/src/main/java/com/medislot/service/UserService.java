@@ -33,10 +33,18 @@ public class UserService implements UserDetailsService {
      */
     @Transactional
     public User register(String phone, String rawPassword, String name) {
+        return createStaff(phone, rawPassword, name, Role.PATIENT);
+    }
+
+    /**
+     * 创建内部账号（管理员 / 医生），供管理后台使用。
+     */
+    @Transactional
+    public User createStaff(String phone, String rawPassword, String name, Role role) {
         if (userRepository.existsByPhone(phone)) {
-            throw new BusinessException("该手机号已注册");
+            throw new BusinessException("该手机号已存在");
         }
-        User user = new User(phone, passwordEncoder.encode(rawPassword), name, Role.PATIENT);
+        User user = new User(phone, passwordEncoder.encode(rawPassword), name, role);
         return userRepository.save(user);
     }
 

@@ -52,6 +52,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # 将 .env.prod 中所有变量注入容器（外部 API 密钥、管理员账号覆盖等）
+    env_file:
+      - .env.prod
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/medislot_db?serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true

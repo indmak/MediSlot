@@ -1,5 +1,6 @@
 package com.medislot.repository;
 
+import com.medislot.entity.Role;
 import com.medislot.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -10,4 +11,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPhone(String phone);
 
     boolean existsByPhone(String phone);
+
+    long countByRole(Role role);
 }

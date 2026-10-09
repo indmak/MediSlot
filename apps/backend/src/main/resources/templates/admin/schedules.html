@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('排班管理')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title">排班管理</h1>
+        <p class="page-subtitle">为医生添加号源时段</p>
+    </header>
+
+    <nav th:replace="~{layout :: adminNav('schedules')}"></nav>
+
+    <div class="alert alert-success" th:if="${message}" th:text="${message}">排班已添加</div>
+
+    <div class="card form-card mb-4">
+        <h2 class="section-title">选择医生</h2>
+        <form th:action="@{/admin/schedules}" method="get" class="row g-2 align-items-end">
+            <div class="col-12 col-md-5">
+                <label class="form-label" for="doctorSelect">医生</label>
+                <select class="form-select" id="doctorSelect" name="doctorId" onchange="this.form.submit()">
+                    <option value="">请选择医生</option>
+                    <option th:each="d : ${doctors}" th:value="${d.id}"
+                            th:selected="${d.id == selectedDoctorId}"
+                            th:text="${d.name + ' · ' + d.departmentName}">张明华 · 内科</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <button class="btn btn-outline-primary" type="submit">查看排班</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card form-card mb-4" th:if="${selectedDoctorId != null}">
+        <h2 class="section-title">新增排班</h2>
+        <form th:action="@{/admin/schedules}" th:object="${form}" method="post" class="row g-3">
+            <input type="hidden" th:field="*{doctorId}">
+            <div class="col-6 col-md-3">
+                <label class="form-label" for="date">日期</label>
+                <input class="form-control" id="date" type="date" th:field="*{date}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{date}"></div>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label" for="startTime">开始</label>
+                <input class="form-control" id="startTime" type="time" th:field="*{startTime}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{startTime}"></div>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label" for="endTime">结束</label>
+                <input class="form-control" id="endTime" type="time" th:field="*{endTime}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{endTime}"></div>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label" for="totalCount">号源数</label>
+                <input class="form-control" id="totalCount" type="number" min="1" th:field="*{totalCount}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{totalCount}"></div>
+            </div>
+            <div class="col-12 col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary" type="submit">添加排班</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card" th:if="${schedules != null}">
+        <table class="table ms-table">
+            <thead>
+            <tr><th>日期</th><th>时段</th><th>号源</th><th>已约</th><th>剩余</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${schedules}">
+                <td th:text="${#temporals.format(s.date,'yyyy-MM-dd')}">2026-10-08</td>
+                <td th:text="${#temporals.format(s.startTime,'HH:mm')} + ' - ' + ${#temporals.format(s.endTime,'HH:mm')}">09:00 - 09:30</td>
+                <td th:text="${s.totalCount}">3</td>
+                <td th:text="${s.bookedCount}">0</td>
+                <td>
+                    <span class="badge-status"
+                          th:classappend="${s.available} ? 'badge-available' : 'badge-full'"
+                          th:text="${s.remaining}">3</span>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(schedules)}">
+                <td colspan="5" class="text-center text-muted">该医生暂无排班</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

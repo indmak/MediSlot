@@ -27,4 +27,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
                                  @Param("to") LocalDate to);
 
     boolean existsByDoctorIdAndDateAndStartTime(Long doctorId, LocalDate date, LocalTime startTime);
+
+    List<Schedule> findByDoctorIdOrderByDateDescStartTimeAsc(Long doctorId);
 }

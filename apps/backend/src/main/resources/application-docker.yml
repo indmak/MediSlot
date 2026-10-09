@@ -22,7 +22,11 @@ server:
 
 medislot:
   seed:
-    enabled: false
+    # 云端作为演示/测试环境：写入 5 位不同科室的演示医生 + 内置管理员
+    enabled: true
+  admin:
+    phone: ${MEDISLOT_ADMIN_PHONE:13000000000}
+    password: ${MEDISLOT_ADMIN_PASSWORD:admin123}
 
 logging:
   level:

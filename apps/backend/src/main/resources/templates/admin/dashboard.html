@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('管理后台')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title">管理后台</h1>
+        <p class="page-subtitle">诊所运营总览</p>
+    </header>
+
+    <nav th:replace="~{layout :: adminNav('dashboard')}"></nav>
+
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-card__value" th:text="${stats.doctors}">5</div>
+            <div class="stat-card__label">医生</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value" th:text="${stats.patients}">1</div>
+            <div class="stat-card__label">患者</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value" th:text="${stats.departments}">5</div>
+            <div class="stat-card__label">科室</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value" th:text="${stats.todayAppointments}">0</div>
+            <div class="stat-card__label">今日预约</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value" th:text="${stats.pendingAppointments}">0</div>
+            <div class="stat-card__label">待就诊</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card__value" th:text="${stats.totalAppointments}">0</div>
+            <div class="stat-card__label">累计预约</div>
+        </div>
+    </div>
+
+    <div class="card form-card">
+        <h2 class="section-title">快捷入口</h2>
+        <div class="quick-links">
+            <a class="btn btn-primary" th:href="@{/admin/doctors}">管理医生</a>
+            <a class="btn btn-outline-primary" th:href="@{/admin/departments}">管理科室</a>
+            <a class="btn btn-outline-primary" th:href="@{/admin/schedules}">排班管理</a>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

@@ -25,6 +25,16 @@ server:
     whitelabel:
       enabled: false
 
+# 应用自定义配置
+medislot:
+  seed:
+    # 是否写入演示数据（科室/医生/患者/排班）。dev 与 docker 默认开启。
+    enabled: false
+  admin:
+    # 内置管理员账号（幂等创建）；可用环境变量覆盖：MEDISLOT_ADMIN_PHONE / MEDISLOT_ADMIN_PASSWORD
+    phone: 13000000000
+    password: admin123
+
 logging:
   level:
     com.medislot: INFO

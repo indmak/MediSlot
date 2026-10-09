@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('科室管理')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title">科室管理</h1>
+    </header>
+
+    <nav th:replace="~{layout :: adminNav('departments')}"></nav>
+
+    <div class="alert alert-success" th:if="${message}" th:text="${message}">科室已添加</div>
+
+    <div class="admin-2col">
+        <div class="card">
+            <table class="table ms-table">
+                <thead>
+                <tr><th>#</th><th>名称</th><th>排序</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="d, it : ${departments}">
+                    <td th:text="${it.count}">1</td>
+                    <td th:text="${d.name}">内科</td>
+                    <td th:text="${d.sortOrder}">1</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(departments)}">
+                    <td colspan="3" class="text-center text-muted">暂无科室</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card form-card">
+            <h2 class="section-title">新增科室</h2>
+            <form th:action="@{/admin/departments}" th:object="${form}" method="post">
+                <div class="mb-3">
+                    <label class="form-label" for="name">名称</label>
+                    <input class="form-control" id="name" type="text" th:field="*{name}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{name}"></div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label" for="sortOrder">排序号</label>
+                    <input class="form-control" id="sortOrder" type="number" th:field="*{sortOrder}">
+                </div>
+                <button class="btn btn-primary" type="submit">添加</button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

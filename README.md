@@ -40,7 +40,11 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 
 - Slot decrement uses a `@Version` optimistic lock plus a `booked_count < total_count` guard, so two patients cannot take the same last slot.
 
-**Admin** is planned for a later phase; for now, reference data is managed directly in the database.
+**Admin**
+
+- A management console at `/admin`: a dashboard with live counts, plus management for departments, doctors (creating the login account at the same time), and schedules.
+- Admins sign in through the same `/login` page and live in the unified `user` table (`role = ADMIN`) — no separate table or login URL.
+- A default admin account is created idempotently on startup (overridable via `MEDISLOT_ADMIN_PHONE` / `MEDISLOT_ADMIN_PASSWORD`).
 
 ## Tech Stack
 

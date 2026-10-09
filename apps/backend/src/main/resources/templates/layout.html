@@ -29,6 +29,7 @@
             <a th:href="@{/doctors}">找医生</a>
             <a th:href="@{/appointments/my}" sec:authorize="hasRole('PATIENT')">我的预约</a>
             <a th:href="@{/doctor/today}" sec:authorize="hasRole('DOCTOR')">今日预约</a>
+            <a th:href="@{/admin}" sec:authorize="hasRole('ADMIN')">管理后台</a>
         </div>
         <div class="ms-nav__account">
             <th:block sec:authorize="isAnonymous()">
@@ -43,6 +44,14 @@
             </th:block>
         </div>
     </div>
+</nav>
+
+<!-- 管理后台子导航 -->
+<nav th:fragment="adminNav(active)" class="admin-nav" aria-label="管理后台导航">
+    <a th:href="@{/admin}" th:classappend="${active == 'dashboard' ? 'active' : ''}">仪表盘</a>
+    <a th:href="@{/admin/departments}" th:classappend="${active == 'departments' ? 'active' : ''}">科室</a>
+    <a th:href="@{/admin/doctors}" th:classappend="${active == 'doctors' ? 'active' : ''}">医生</a>
+    <a th:href="@{/admin/schedules}" th:classappend="${active == 'schedules' ? 'active' : ''}">排班</a>
 </nav>
 
 <!-- 医生卡片网格（首页 / 医生列表共用） -->

@@ -11,21 +11,26 @@ import com.medislot.repository.ScheduleRepository;
 import com.medislot.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
 /**
- * 本地开发演示数据：科室、账号、医生、未来 7 天排班。
- * 仅在 dev profile 且 medislot.seed.enabled=true 时执行，且只在库为空时写入一次。
+ * 启动初始化：
+ * <ul>
+ *   <li>始终确保存在一个内置管理员账号（幂等）；</li>
+ *   <li>当 {@code medislot.seed.enabled=true} 且库为空时，写入演示数据：
+ *       5 个科室、5 位不同科室的医生、1 位患者，以及未来 7 天排班。</li>
+ * </ul>
  */
 @Configuration
-@ConditionalOnProperty(prefix = "medislot.seed", name = "enabled", havingValue = "true")
 public class DataInitializer implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
@@ -36,22 +41,52 @@ public class DataInitializer implements CommandLineRunner {
     private final ScheduleRepository scheduleRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private final boolean seedEnabled;
+    private final String adminPhone;
+    private final String adminPassword;
+
     public DataInitializer(UserRepository userRepository,
                            DepartmentRepository departmentRepository,
                            DoctorRepository doctorRepository,
                            ScheduleRepository scheduleRepository,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder,
+                           @Value("${medislot.seed.enabled:false}") boolean seedEnabled,
+                           @Value("${medislot.admin.phone:13000000000}") String adminPhone,
+                           @Value("${medislot.admin.password:admin123}") String adminPassword) {
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
         this.doctorRepository = doctorRepository;
         this.scheduleRepository = scheduleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.seedEnabled = seedEnabled;
+        this.adminPhone = adminPhone;
+        this.adminPassword = adminPassword;
     }
 
     @Override
     public void run(String... args) {
+        ensureAdmin();
+        if (seedEnabled) {
+            seedDemoData();
+        } else {
+            log.info("[init] 演示数据未启用（medislot.seed.enabled=false）");
+        }
+    }
+
+    /** 幂等地保证存在一个管理员账号（生产环境同样内置）。 */
+    private void ensureAdmin() {
+        if (userRepository.countByRole(Role.ADMIN) > 0) {
+            log.info("[init] 管理员账号已存在，跳过");
+            return;
+        }
+        userRepository.save(new User(adminPhone, encode(adminPassword), "系统管理员", Role.ADMIN));
+        log.info("[init] 已内置管理员账号：{}", adminPhone);
+    }
+
+    /** 演示数据：5 个科室 + 5 位不同科室的医生 + 1 位患者 + 未来 7 天排班。 */
+    private void seedDemoData() {
         if (departmentRepository.count() > 0) {
-            log.info("[seed] 已有数据，跳过初始化");
+            log.info("[seed] 已有数据，跳过演示数据初始化");
             return;
         }
         log.info("[seed] 写入演示数据……");
@@ -62,12 +97,10 @@ public class DataInitializer implements CommandLineRunner {
         Department orthopedics = departmentRepository.save(new Department("骨科", 4));
         Department ophthalmology = departmentRepository.save(new Department("眼科", 5));
 
-        // 管理员
-        userRepository.save(new User("13000000000", encode("admin123"), "系统管理员", Role.ADMIN));
         // 患者
         userRepository.save(new User("13900000000", encode("patient123"), "王小明", Role.PATIENT));
 
-        // 医生
+        // 5 位医生，分布在 5 个不同科室
         createDoctor("13800000001", "doctor123", "张明华", "副主任医师",
                 internal, "从事内科临床工作 15 年，擅长心血管与呼吸系统常见病。");
         createDoctor("13800000002", "doctor123", "李建国", "主任医师",
@@ -80,14 +113,14 @@ public class DataInitializer implements CommandLineRunner {
                 ophthalmology, "眼科医生，擅长近视防控与干眼症治疗。");
 
         seedSchedules(LocalDate.now(), 7);
-        log.info("[seed] 完成。管理员 13000000000/admin123，医生 13800000001/doctor123，患者 13900000000/patient123");
+        log.info("[seed] 完成：5 个科室 / 5 位医生 / 1 位患者。医生 13800000001/doctor123，患者 13900000000/patient123");
     }
 
     private void createDoctor(String phone, String rawPassword, String name, String title,
                               Department department, String bio) {
         User user = userRepository.save(new User(phone, encode(rawPassword), name, Role.DOCTOR));
         Doctor doctor = new Doctor(user, department, title, bio);
-        doctor.setRating(java.math.BigDecimal.valueOf(4.7 + Math.random() * 0.2).setScale(1, java.math.RoundingMode.HALF_UP));
+        doctor.setRating(BigDecimal.valueOf(4.7 + Math.random() * 0.2).setScale(1, RoundingMode.HALF_UP));
         doctor.setAppointmentCount(100 + (int) (Math.random() * 400));
         doctorRepository.save(doctor);
     }

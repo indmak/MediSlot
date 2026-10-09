@@ -140,3 +140,93 @@
         width: 100%;
     }
 }
+
+/* ===== 管理后台 ===== */
+.admin-nav {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    padding: 4px;
+    background: #EEF0F3;
+    border-radius: var(--radius-input);
+    margin-bottom: var(--space-5);
+    width: fit-content;
+}
+
+.admin-nav a {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--medislot-text-secondary);
+}
+
+.admin-nav a:hover {
+    color: var(--medislot-primary);
+}
+
+.admin-nav a.active {
+    background: var(--medislot-surface);
+    color: var(--medislot-primary);
+    font-weight: 500;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+}
+
+.stat-card {
+    background: var(--medislot-surface);
+    border: 1px solid var(--medislot-border);
+    border-radius: var(--radius-card);
+    padding: var(--space-4) var(--space-5);
+}
+
+.stat-card__value {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.stat-card__label {
+    font-size: 13px;
+    color: var(--medislot-text-secondary);
+    margin-top: 2px;
+}
+
+.quick-links {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-top: var(--space-3);
+}
+
+.admin-2col {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: var(--space-4);
+    align-items: start;
+}
+
+.ms-table {
+    margin-bottom: 0;
+}
+
+.ms-table th {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--medislot-text-secondary);
+}
+
+.ms-table td {
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+@media (max-width: 767.98px) {
+    .admin-2col {
+        grid-template-columns: 1fr;
+    }
+}

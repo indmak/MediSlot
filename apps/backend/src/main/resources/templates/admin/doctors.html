@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('医生管理')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title">医生管理</h1>
+        <p class="page-subtitle">共 <span th:text="${#lists.size(doctors)}">5</span> 位医生</p>
+    </header>
+
+    <nav th:replace="~{layout :: adminNav('doctors')}"></nav>
+
+    <div class="alert alert-success" th:if="${message}" th:text="${message}">医生已添加</div>
+
+    <div class="card mb-4">
+        <table class="table ms-table">
+            <thead>
+            <tr><th>姓名</th><th>手机号</th><th>职称</th><th>科室</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="d : ${doctors}">
+                <td th:text="${d.name}">张明华</td>
+                <td th:text="${d.phone}">13800000001</td>
+                <td th:text="${d.title}">副主任医师</td>
+                <td th:text="${d.departmentName}">内科</td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/doctors/{id}/edit(id=${d.id})}">编辑</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(doctors)}">
+                <td colspan="5" class="text-center text-muted">暂无医生</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card form-card">
+        <h2 class="section-title">新增医生</h2>
+        <form th:action="@{/admin/doctors}" th:object="${form}" method="post" class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="name">姓名</label>
+                <input class="form-control" id="name" type="text" th:field="*{name}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{name}"></div>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="phone">手机号（登录名）</label>
+                <input class="form-control" id="phone" type="text" th:field="*{phone}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{phone}"></div>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="password">初始密码</label>
+                <input class="form-control" id="password" type="text" th:field="*{password}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{password}"></div>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="departmentId">科室</label>
+                <select class="form-select" id="departmentId" th:field="*{departmentId}" th:errorclass="is-invalid">
+                    <option value="">请选择科室</option>
+                    <option th:each="dept : ${departments}" th:value="${dept.id}" th:text="${dept.name}">内科</option>
+                </select>
+                <div class="invalid-feedback" th:errors="*{departmentId}"></div>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="title">职称</label>
+                <input class="form-control" id="title" type="text" th:field="*{title}" placeholder="如：主治医师">
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="bio">简介</label>
+                <textarea class="form-control" id="bio" rows="2" th:field="*{bio}"></textarea>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-primary" type="submit">添加医生</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

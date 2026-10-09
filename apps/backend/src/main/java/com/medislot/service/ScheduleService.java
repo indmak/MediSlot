@@ -1,8 +1,11 @@
 package com.medislot.service;
 
 import com.medislot.dto.ScheduleDayView;
+import com.medislot.dto.ScheduleForm;
+import com.medislot.entity.Doctor;
 import com.medislot.entity.Schedule;
 import com.medislot.exception.BusinessException;
+import com.medislot.repository.DoctorRepository;
 import com.medislot.repository.ScheduleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,9 +28,11 @@ public class ScheduleService {
     public static final int DEFAULT_DAYS = 7;
 
     private final ScheduleRepository scheduleRepository;
+    private final DoctorRepository doctorRepository;
 
-    public ScheduleService(ScheduleRepository scheduleRepository) {
+    public ScheduleService(ScheduleRepository scheduleRepository, DoctorRepository doctorRepository) {
         this.scheduleRepository = scheduleRepository;
+        this.doctorRepository = doctorRepository;
     }
 
     @Transactional(readOnly = true)
@@ -69,6 +74,31 @@ public class ScheduleService {
     public boolean hasAvailableToday(Long doctorId) {
         LocalDate today = LocalDate.now();
         return scheduleRepository.findAvailable(doctorId, today, today).stream().findAny().isPresent();
+    }
+
+    /** 管理员查看某医生的全部排班（按日期倒序）。 */
+    @Transactional(readOnly = true)
+    public List<Schedule> listByDoctorForAdmin(Long doctorId) {
+        return scheduleRepository.findByDoctorIdOrderByDateDescStartTimeAsc(doctorId);
+    }
+
+    /**
+     * 管理员新增排班（号源）。
+     */
+    @Transactional
+    public Schedule create(ScheduleForm form) {
+        if (!form.getStartTime().isBefore(form.getEndTime())) {
+            throw new BusinessException("结束时间必须晚于开始时间");
+        }
+        if (scheduleRepository.existsByDoctorIdAndDateAndStartTime(
+                form.getDoctorId(), form.getDate(), form.getStartTime())) {
+            throw new BusinessException("该医生在该日期时段已有排班");
+        }
+        Doctor doctor = doctorRepository.findById(form.getDoctorId())
+                .orElseThrow(() -> new BusinessException("医生不存在"));
+        Schedule schedule = new Schedule(doctor, form.getDate(), form.getStartTime(),
+                form.getEndTime(), form.getTotalCount());
+        return scheduleRepository.save(schedule);
     }
 
     public static LocalDate todayPlus(int days) {

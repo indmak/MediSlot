@@ -34,7 +34,7 @@ public class SecurityConfig {
                         .requestMatchers("/doctor/**").hasRole("DOCTOR")
                         // 患者预约
                         .requestMatchers("/appointments/**").hasRole("PATIENT")
-                        // 管理后台（阶段一不实现）
+                        // 管理后台
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
@@ -42,9 +42,11 @@ public class SecurityConfig {
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
                         .successHandler((request, response, authentication) -> {
+                            boolean isAdmin = authentication.getAuthorities().stream()
+                                    .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
                             boolean isDoctor = authentication.getAuthorities().stream()
                                     .anyMatch(a -> "ROLE_DOCTOR".equals(a.getAuthority()));
-                            response.sendRedirect(isDoctor ? "/doctor/today" : "/");
+                            response.sendRedirect(isAdmin ? "/admin" : (isDoctor ? "/doctor/today" : "/"));
                         })
                         .failureUrl("/login?error")
                         .permitAll()
