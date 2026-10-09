@@ -17,6 +17,7 @@ import com.medislot.repository.UserRepository;
 import com.medislot.service.AppointmentService;
 import com.medislot.service.ConsultationService;
 import com.medislot.service.PaymentService;
+import com.medislot.service.SymptomIntakeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -60,6 +62,8 @@ class ConsultationPageTest {
     @Autowired
     private ConsultationService consultationService;
     @Autowired
+    private SymptomIntakeService symptomIntakeService;
+    @Autowired
     private DepartmentRepository departmentRepository;
     @Autowired
     private DoctorRepository doctorRepository;
@@ -75,6 +79,7 @@ class ConsultationPageTest {
     private MockMvc mockMvc;
     private String patientPhone;
     private String doctorPhone;
+    private Long appointmentId;
     private Conversation group;
     private Conversation privateCase;
 
@@ -102,6 +107,7 @@ class ConsultationPageTest {
 
         patientPhone = patient.getPhone();
         doctorPhone = doctorUser.getPhone();
+        appointmentId = appointment.getId();
         group = consultationService.getOrCreateGroup(appointment.getId());
         privateCase = consultationService.getOrCreateDoctorPrivate(appointment.getId());
         consultationService.postPatientMessage(group.getId(), patient, "头痛两天了");
@@ -170,5 +176,26 @@ class ConsultationPageTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("event: start")))
                 .andExpect(content().string(containsString("event: done")));
+    }
+
+    @Test
+    void intakeFormRenders() throws Exception {
+        mockMvc.perform(get("/consultations/" + group.getId() + "/intake")
+                        .with(user(patientPhone).roles("PATIENT")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("完善问诊信息")));
+    }
+
+    @Test
+    void saveIntakePersists() throws Exception {
+        mockMvc.perform(post("/consultations/" + group.getId() + "/intake")
+                        .with(user(patientPhone).roles("PATIENT"))
+                        .with(csrf())
+                        .param("chiefComplaint", "头痛两天")
+                        .param("symptoms", "头痛")
+                        .param("severity", "MILD"))
+                .andExpect(status().is3xxRedirection());
+
+        assertThat(symptomIntakeService.findByAppointmentId(appointmentId)).isPresent();
     }
 }

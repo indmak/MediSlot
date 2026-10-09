@@ -11,6 +11,7 @@
 排班 Schedule   1 ── N 预约 Appointment
 患者 User       1 ── N 预约 Appointment
 预约 Appointment 1 ── 1 支付 Payment
+预约 Appointment 1 ── 1 结构化症状 SymptomIntake
 预约 Appointment 1 ── N 会话 Conversation
 会话 Conversation 1 ── N 消息 ConversationMessage
 ```
@@ -152,6 +153,26 @@
 
 > 默认写入：`consultation.enabled=true`、`consultation.max-messages=30`、
 > `consultation.rate-limit-seconds=3`、`consultation.max-history=20`。
+
+### symptom_intake（结构化症状采集）
+
+患者预填的问诊信息，与预约 1:1；会作为上下文注入 AI 系统提示词，并在群聊页展示给医生。
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | BIGINT | PK, auto | 主键 |
+| appointment_id | BIGINT | FK→appointment, UNIQUE | 关联预约 |
+| chief_complaint | VARCHAR(500) | | 主诉 |
+| symptoms | VARCHAR(500) | | 症状（逗号分隔） |
+| duration | VARCHAR(50) | | 病程 |
+| severity | VARCHAR(20) | | `MILD` / `MODERATE` / `SEVERE` |
+| accompanying | VARCHAR(500) | | 伴随症状 |
+| past_history | VARCHAR(500) | | 既往史 |
+| medications | VARCHAR(500) | | 近期用药 |
+| allergies | VARCHAR(500) | | 过敏史 |
+| temperature | DECIMAL(3,1) | | 体温（℃） |
+| red_flags | VARCHAR(255) | | 危险信号（逗号分隔） |
+| created_at / updated_at | DATETIME | | |
 
 ## 预约状态机
 

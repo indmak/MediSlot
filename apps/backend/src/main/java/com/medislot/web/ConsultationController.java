@@ -1,20 +1,26 @@
 package com.medislot.web;
 
 import com.medislot.dto.MessageView;
+import com.medislot.dto.SymptomIntakeForm;
 import com.medislot.entity.Conversation;
 import com.medislot.entity.ConversationMessage;
 import com.medislot.entity.MessageType;
 import com.medislot.entity.ReviewStatus;
 import com.medislot.entity.Role;
+import com.medislot.entity.SeverityLevel;
 import com.medislot.entity.User;
 import com.medislot.exception.BusinessException;
 import com.medislot.service.ConsultationService;
+import com.medislot.service.SymptomIntakeService;
 import com.medislot.service.UserService;
 import com.medislot.service.ai.AiChatClient;
+import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,15 +45,27 @@ public class ConsultationController {
 
     private final ConsultationService consultationService;
     private final UserService userService;
+    private final SymptomIntakeService symptomIntakeService;
     private final AiChatClient aiChatClient;
 
     public ConsultationController(ConsultationService consultationService,
                                   UserService userService,
+                                  SymptomIntakeService symptomIntakeService,
                                   AiChatClient aiChatClient) {
         this.consultationService = consultationService;
         this.userService = userService;
+        this.symptomIntakeService = symptomIntakeService;
         this.aiChatClient = aiChatClient;
     }
+
+    /** 常见症状选项。 */
+    private static final List<String> SYMPTOM_OPTIONS = List.of(
+            "发热", "咳嗽", "咽痛", "头痛", "头晕", "腹痛", "腹泻", "恶心", "呕吐",
+            "乏力", "皮疹", "胸闷", "心悸", "关节痛", "失眠");
+
+    /** 危险信号选项。 */
+    private static final List<String> RED_FLAG_OPTIONS = List.of(
+            "胸痛", "呼吸困难", "意识障碍", "大出血", "剧烈头痛", "持续高热");
 
     @GetMapping("/by-appointment/{appointmentId}")
     public String byAppointment(@PathVariable Long appointmentId) {
@@ -66,7 +84,51 @@ public class ConsultationController {
         model.addAttribute("lastMessageId", messages.isEmpty() ? 0L : messages.get(messages.size() - 1).getId());
         model.addAttribute("isDoctor", user.getRole() == Role.DOCTOR);
         model.addAttribute("isPatient", user.getRole() == Role.PATIENT);
+        model.addAttribute("intake",
+                symptomIntakeService.findByAppointmentId(conversation.getAppointment().getId()).orElse(null));
         return "consultation/chat";
+    }
+
+    // ===== 结构化症状采集 =====
+
+    @GetMapping("/{id}/intake")
+    public String intakeForm(@PathVariable Long id, Authentication authentication, Model model) {
+        User user = userService.findByPhone(authentication.getName());
+        consultationService.assertCanViewGroup(id, user);
+        if (user.getRole() != Role.PATIENT) {
+            return "redirect:/consultations/" + id;
+        }
+        Conversation conversation = consultationService.getRequired(id);
+        model.addAttribute("conversation", conversation);
+        model.addAttribute("form", symptomIntakeService.toForm(conversation.getAppointment().getId()));
+        model.addAttribute("symptomOptions", SYMPTOM_OPTIONS);
+        model.addAttribute("redFlagOptions", RED_FLAG_OPTIONS);
+        model.addAttribute("severities", SeverityLevel.values());
+        return "consultation/intake";
+    }
+
+    @PostMapping("/{id}/intake")
+    public String saveIntake(@PathVariable Long id,
+                             Authentication authentication,
+                             @Valid @ModelAttribute("form") SymptomIntakeForm form,
+                             BindingResult bindingResult,
+                             Model model,
+                             RedirectAttributes ra) {
+        User user = userService.findByPhone(authentication.getName());
+        if (user.getRole() != Role.PATIENT) {
+            return "redirect:/consultations/" + id;
+        }
+        Conversation conversation = consultationService.getRequired(id);
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("conversation", conversation);
+            model.addAttribute("symptomOptions", SYMPTOM_OPTIONS);
+            model.addAttribute("redFlagOptions", RED_FLAG_OPTIONS);
+            model.addAttribute("severities", SeverityLevel.values());
+            return "consultation/intake";
+        }
+        symptomIntakeService.save(id, user, form);
+        ra.addFlashAttribute("message", "问诊信息已保存，AI 与医生已同步");
+        return "redirect:/consultations/" + id;
     }
 
     // ===== 实时：流式发送（SSE） =====

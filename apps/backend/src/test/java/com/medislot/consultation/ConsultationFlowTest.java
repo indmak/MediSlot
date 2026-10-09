@@ -1,6 +1,7 @@
 package com.medislot.consultation;
 
 import com.medislot.dto.AppointmentForm;
+import com.medislot.dto.SymptomIntakeForm;
 import com.medislot.entity.Appointment;
 import com.medislot.entity.Conversation;
 import com.medislot.entity.ConversationMessage;
@@ -13,6 +14,8 @@ import com.medislot.entity.ReviewStatus;
 import com.medislot.entity.Role;
 import com.medislot.entity.Schedule;
 import com.medislot.entity.SenderType;
+import com.medislot.entity.SeverityLevel;
+import com.medislot.entity.SymptomIntake;
 import com.medislot.entity.User;
 import com.medislot.repository.DepartmentRepository;
 import com.medislot.repository.DoctorRepository;
@@ -22,6 +25,7 @@ import com.medislot.repository.UserRepository;
 import com.medislot.service.AppointmentService;
 import com.medislot.service.ConsultationService;
 import com.medislot.service.PaymentService;
+import com.medislot.service.SymptomIntakeService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,6 +52,8 @@ class ConsultationFlowTest {
     private PaymentService paymentService;
     @Autowired
     private ConsultationService consultationService;
+    @Autowired
+    private SymptomIntakeService symptomIntakeService;
     @Autowired
     private DepartmentRepository departmentRepository;
     @Autowired
@@ -133,5 +139,27 @@ class ConsultationFlowTest {
 
         consultationService.generateSummary(group.getId(), setup.doctor());
         assertThat(consultationService.getRequired(group.getId()).getSummary()).isNotBlank();
+    }
+
+    @Test
+    void structuredIntakeIsSavedAndUsedAsContext() {
+        Setup setup = createPaidAppointment("20004");
+        Conversation group = consultationService.getOrCreateGroup(setup.appointment().getId());
+
+        SymptomIntakeForm form = new SymptomIntakeForm();
+        form.setChiefComplaint("反复咳嗽 3 天");
+        form.setSymptoms(List.of("咳嗽", "发热"));
+        form.setDuration("3 天");
+        form.setSeverity(SeverityLevel.MODERATE);
+        form.setTemperature(new BigDecimal("38.5"));
+        form.setRedFlags(List.of("持续高热"));
+        symptomIntakeService.save(group.getId(), setup.patient(), form);
+
+        SymptomIntake saved = symptomIntakeService.findByAppointmentId(setup.appointment().getId()).orElseThrow();
+        assertThat(saved.getSymptoms()).contains("咳嗽").contains("发热");
+        assertThat(saved.getSeverity()).isEqualTo(SeverityLevel.MODERATE);
+
+        String context = symptomIntakeService.buildContext(setup.appointment().getId());
+        assertThat(context).contains("反复咳嗽 3 天").contains("危险信号").contains("38.5");
     }
 }

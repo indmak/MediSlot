@@ -28,6 +28,52 @@
         <pre class="chat-summary" th:text="${conversation.summary}"></pre>
     </section>
 
+    <!-- 结构化问诊信息 -->
+    <section class="card summary-card" th:if="${intake != null}">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="section-title">问诊信息</h2>
+            <a th:if="${isPatient}" class="btn btn-sm btn-outline-primary"
+               th:href="@{/consultations/{id}/intake(id=${conversation.id})}">编辑</a>
+        </div>
+        <dl class="intake-detail">
+            <div th:if="${intake.chiefComplaint != null}">
+                <dt>主诉</dt><dd th:text="${intake.chiefComplaint}"></dd>
+            </div>
+            <div th:if="${intake.symptoms != null}">
+                <dt>症状</dt><dd th:text="${intake.symptoms}"></dd>
+            </div>
+            <div th:if="${intake.duration != null}">
+                <dt>病程</dt><dd th:text="${intake.duration}"></dd>
+            </div>
+            <div th:if="${intake.severity != null}">
+                <dt>严重程度</dt><dd th:text="${intake.severity.label}"></dd>
+            </div>
+            <div th:if="${intake.accompanying != null}">
+                <dt>伴随症状</dt><dd th:text="${intake.accompanying}"></dd>
+            </div>
+            <div th:if="${intake.temperature != null}">
+                <dt>体温</dt><dd th:text="${intake.temperature + '℃'}"></dd>
+            </div>
+            <div th:if="${intake.pastHistory != null}">
+                <dt>既往史</dt><dd th:text="${intake.pastHistory}"></dd>
+            </div>
+            <div th:if="${intake.medications != null}">
+                <dt>近期用药</dt><dd th:text="${intake.medications}"></dd>
+            </div>
+            <div th:if="${intake.allergies != null}">
+                <dt>过敏史</dt><dd th:text="${intake.allergies}"></dd>
+            </div>
+            <div th:if="${intake.redFlags != null}">
+                <dt>危险信号</dt><dd class="text-danger" th:text="${intake.redFlags}"></dd>
+            </div>
+        </dl>
+    </section>
+    <div class="alert alert-success d-flex justify-content-between align-items-center"
+         th:if="${intake == null and isPatient}">
+        <span>完善结构化问诊信息，AI 与医生能更快了解您的病情。</span>
+        <a class="btn btn-sm btn-primary" th:href="@{/consultations/{id}/intake(id=${conversation.id})}">去填写</a>
+    </div>
+
     <div class="chat" id="chatMessages"
          th:attr="data-last-id=${lastMessageId},data-conv=${conversation.id},data-is-doctor=${isDoctor},data-endpoint='/consultations',data-self=${isDoctor ? 'DOCTOR' : 'PATIENT'}">
         <div class="chat-msg" th:each="m : ${messages}"

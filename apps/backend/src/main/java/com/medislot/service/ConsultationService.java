@@ -45,17 +45,20 @@ public class ConsultationService {
     private final ConversationMessageRepository messageRepository;
     private final AppointmentRepository appointmentRepository;
     private final SettingService settingService;
+    private final SymptomIntakeService symptomIntakeService;
     private final AiChatClient aiChatClient;
 
     public ConsultationService(ConversationRepository conversationRepository,
                                ConversationMessageRepository messageRepository,
                                AppointmentRepository appointmentRepository,
                                SettingService settingService,
+                               SymptomIntakeService symptomIntakeService,
                                AiChatClient aiChatClient) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.appointmentRepository = appointmentRepository;
         this.settingService = settingService;
+        this.symptomIntakeService = symptomIntakeService;
         this.aiChatClient = aiChatClient;
     }
 
@@ -423,7 +426,8 @@ public class ConsultationService {
                 + "你的职责：主动、友好地追问患者，收集主诉、病程、伴随症状、既往史与用药；"
                 + "给出一般性的健康建议。\n"
                 + "严格遵守：不给出确诊结论，不开具处方；如出现胸痛、呼吸困难、大出血、意识障碍等危险信号，"
-                + "立即提示尽快就医/急诊。回复简洁、分点、口语化。";
+                + "立即提示尽快就医/急诊。回复简洁、分点、口语化。"
+                + symptomIntakeService.buildContext(appointment.getId());
     }
 
     private String privateSystemPrompt() {

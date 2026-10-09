@@ -396,6 +396,33 @@
     font-size: 14px;
 }
 
+/* 结构化问诊信息 */
+.intake-detail {
+    margin: var(--space-3) 0 0;
+}
+
+.intake-detail > div {
+    display: flex;
+    gap: var(--space-4);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--medislot-border);
+    font-size: 14px;
+}
+
+.intake-detail > div:last-child {
+    border-bottom: none;
+}
+
+.intake-detail dt {
+    min-width: 84px;
+    color: var(--medislot-text-secondary);
+    font-weight: 400;
+}
+
+.intake-detail dd {
+    margin: 0;
+}
+
 /* ===== 医生病例研究（与群聊区分样式） ===== */
 .case-header {
     background: #0F172A;
