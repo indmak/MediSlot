@@ -18,7 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ExternalKnowledgeServiceTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private final ExternalKnowledgeService service = new ExternalKnowledgeService(mapper, null, null);
+    private final ExternalKnowledgeService service =
+            new ExternalKnowledgeService(mapper, null, null, "/run/secrets/medislot/external/kb");
 
     @Test
     void pubmedPresetParsesAndRenders() {

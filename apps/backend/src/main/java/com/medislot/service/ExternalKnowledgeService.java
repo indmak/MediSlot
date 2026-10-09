@@ -9,13 +9,16 @@ import com.medislot.service.external.ExternalSourceConfig;
 import com.medislot.service.external.JsonPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -46,13 +49,16 @@ public class ExternalKnowledgeService {
     private final ObjectMapper objectMapper;
     private final KnowledgeSourceRepository sourceRepository;
     private final KnowledgeService knowledgeService;
+    private final Path secretRoot;
 
     public ExternalKnowledgeService(ObjectMapper objectMapper,
                                     KnowledgeSourceRepository sourceRepository,
-                                    KnowledgeService knowledgeService) {
+                                    KnowledgeService knowledgeService,
+                                    @Value("${medislot.kb.external-secret-root:/run/secrets/medislot/external/kb}") String secretRoot) {
         this.objectMapper = objectMapper;
         this.sourceRepository = sourceRepository;
         this.knowledgeService = knowledgeService;
+        this.secretRoot = Path.of(secretRoot).toAbsolutePath().normalize();
     }
 
     // ==================== 同步 ====================
@@ -251,7 +257,9 @@ public class ExternalKnowledgeService {
 
     private JsonNode getJson(HttpClient client, String url, Map<String, String> headers,
                              ExternalSourceConfig.Auth auth, String secret) {
-        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(url))
+        URI uri = URI.create(url);
+        assertAllowedTarget(uri);
+        HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
                 .GET()
                 .timeout(Duration.ofSeconds(25))
                 .header("Accept", "application/json")
@@ -282,8 +290,12 @@ public class ExternalKnowledgeService {
         if (auth == null || auth.secretPath == null || auth.secretPath.isBlank()) {
             return null;
         }
+        Path path = Path.of(auth.secretPath).toAbsolutePath().normalize();
+        if (!path.startsWith(secretRoot)) {
+            log.warn("[kb] 拒绝读取允许目录之外的密钥文件：{}", auth.secretPath);
+            return null;
+        }
         try {
-            Path path = Path.of(auth.secretPath);
             if (!Files.exists(path)) {
                 return null;
             }
@@ -292,6 +304,35 @@ public class ExternalKnowledgeService {
             log.warn("[kb] 读取外部密钥失败：{}", e.getMessage());
             return null;
         }
+    }
+
+    /** 仅允许 http/https，且目标主机不能是内网 / 本机 / 链路本地 / 组播地址（防 SSRF）。 */
+    private void assertAllowedTarget(URI uri) {
+        String scheme = uri.getScheme();
+        if (scheme == null || !(scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
+            throw new BusinessException("仅支持 http/https 外部接口");
+        }
+        String host = uri.getHost();
+        if (host == null || host.isBlank()) {
+            throw new BusinessException("外部接口地址无效");
+        }
+        InetAddress[] addresses;
+        try {
+            addresses = InetAddress.getAllByName(host);
+        } catch (UnknownHostException e) {
+            throw new BusinessException("无法解析外部接口地址：" + host);
+        }
+        for (InetAddress address : addresses) {
+            if (address.isAnyLocalAddress() || address.isLoopbackAddress() || address.isLinkLocalAddress()
+                    || address.isSiteLocalAddress() || address.isMulticastAddress() || isUniqueLocal(address)) {
+                throw new BusinessException("外部接口地址不允许指向内网 / 本机：" + host);
+            }
+        }
+    }
+
+    private boolean isUniqueLocal(InetAddress address) {
+        byte[] bytes = address.getAddress();
+        return bytes.length == 16 && (bytes[0] & 0xfe) == 0xfc; // IPv6 fc00::/7
     }
 
     private void sleep(int millis, int index) {

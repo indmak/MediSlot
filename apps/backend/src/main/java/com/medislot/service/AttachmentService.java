@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -30,6 +31,10 @@ import java.util.UUID;
 public class AttachmentService {
 
     private static final long MAX_SIZE = 5L * 1024 * 1024;
+
+    /** 仅允许栅格图片与 PDF；显式排除 SVG 等可执行脚本的类型，避免存储型 XSS。 */
+    private static final Set<String> ALLOWED_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf");
 
     private final MessageAttachmentRepository repository;
     private final ConversationRepository conversationRepository;
@@ -60,19 +65,16 @@ public class AttachmentService {
         if (file.getSize() > MAX_SIZE) {
             throw new BusinessException("文件过大（上限 5MB）");
         }
-        String contentType = file.getContentType();
-        if (contentType == null || !(contentType.startsWith("image/") || contentType.equals("application/pdf"))) {
-            throw new BusinessException("仅支持图片或 PDF");
+        String contentType = normalizeContentType(file.getContentType());
+        if (!ALLOWED_TYPES.contains(contentType)) {
+            throw new BusinessException("仅支持 JPG / PNG / GIF / WebP 图片或 PDF");
         }
 
         String original = file.getOriginalFilename();
-        String ext = "";
-        if (original != null && original.contains(".")) {
-            ext = original.substring(original.lastIndexOf('.'));
-        }
-        String stored = UUID.randomUUID().toString().replace("-", "") + ext;
+        String stored = UUID.randomUUID().toString().replace("-", "") + UploadSupport.safeExtension(original);
         try {
-            Files.copy(file.getInputStream(), storageDir.resolve(stored), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(file.getInputStream(), UploadSupport.resolveWithin(storageDir, stored),
+                    StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new BusinessException("文件保存失败");
         }
@@ -93,11 +95,19 @@ public class AttachmentService {
     }
 
     public Resource loadResource(MessageAttachment attachment) {
-        Path path = storageDir.resolve(attachment.getStoredName());
+        Path path = UploadSupport.resolveWithin(storageDir, attachment.getStoredName());
         if (!Files.exists(path)) {
             throw new BusinessException("文件不存在");
         }
         return new FileSystemResource(path);
+    }
+
+    private static String normalizeContentType(String contentType) {
+        if (contentType == null) {
+            return "";
+        }
+        int semi = contentType.indexOf(';');
+        return (semi >= 0 ? contentType.substring(0, semi) : contentType).trim().toLowerCase();
     }
 
     /** 发送消息时把已上传的附件关联到消息。 */

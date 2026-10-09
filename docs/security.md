@@ -78,3 +78,26 @@ server:
 | TOTP 生成/校验/二维码 | `service/TwoFactorService` |
 | 2FA 页面与流程 | `web/TwoFactorController` |
 | 过滤器链 / 授权规则 | `config/SecurityConfig` |
+
+## 上传与文件安全
+
+- **扩展名白名单化**：`UploadSupport.safeExtension` 只保留 1~10 位字母数字扩展名，丢弃
+  `a.txt/../../x` 这类带分隔符/上跳的输入；`UploadSupport.resolveWithin` 再确保最终路径
+  仍落在存储目录内（附件 `medislot.upload.dir`、知识库 `medislot.kb.dir`）。
+- **附件类型白名单**：仅 `image/jpeg`、`image/png`、`image/gif`、`image/webp`、`application/pdf`；
+  显式排除 `image/svg+xml` 等可携带脚本的类型，防存储型 XSS。
+- **下载响应**：图片内联（`inline`），其余一律 `attachment` 下载；文件名做净化（去分隔符/控制字符），
+  并附 `X-Content-Type-Options: nosniff`。
+
+## 外部来源（来源三）安全
+
+外部知识接口会按管理员/维护员填写的配置发起网络请求并读取本地密钥文件，因此加了两道约束：
+
+- **SSRF 防护**：`ExternalKnowledgeService.assertAllowedTarget` 仅允许 `http/https`，并拒绝解析到
+  本机 / 内网 / 链路本地 / 组播 / IPv6 唯一本地地址（`127.0.0.0/8`、`10/8`、`172.16/12`、`192.168/16`、
+  `169.254/16`、`fc00::/7` 等）的目标；`HttpClient` 默认不跟随重定向。
+- **密钥读取范围**：`auth.secretPath` 必须位于 `medislot.kb.external-secret-root`（默认
+  `/run/secrets/medislot/external/kb`）之内，越界直接拒绝，避免读到 `db_password`、AI 密钥等。
+
+> 残留风险：管理员/维护员仍可让某个来源指向任意**公网**地址（这是该功能本身的能力）；
+> 且外部抓取的内容会进入知识库并可能出现在 AI 提示词中（提示注入）。仅授予可信人员该权限。

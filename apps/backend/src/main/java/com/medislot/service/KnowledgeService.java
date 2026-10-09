@@ -96,13 +96,9 @@ public class KnowledgeService {
             throw new BusinessException("文件过大（上限 20MB）");
         }
         String original = file.getOriginalFilename();
-        String ext = "";
-        if (original != null && original.contains(".")) {
-            ext = original.substring(original.lastIndexOf('.'));
-        }
-        String stored = UUID.randomUUID().toString().replace("-", "") + ext;
+        String stored = UUID.randomUUID().toString().replace("-", "") + UploadSupport.safeExtension(original);
         try {
-            Files.copy(file.getInputStream(), kbDir.resolve(stored), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(file.getInputStream(), UploadSupport.resolveWithin(kbDir, stored), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new BusinessException("文件保存失败");
         }
@@ -171,7 +167,7 @@ public class KnowledgeService {
             vectorStore.delete(new FilterExpressionTextParser().parse("documentId == '" + id + "'"));
         }
         try {
-            Files.deleteIfExists(kbDir.resolve(document.getStoredName()));
+            Files.deleteIfExists(UploadSupport.resolveWithin(kbDir, document.getStoredName()));
         } catch (IOException e) {
             log.warn("[kb] 删除文件失败：{}", e.getMessage());
         }
@@ -192,7 +188,7 @@ public class KnowledgeService {
             // 清理旧向量
             vectorStore.delete(new FilterExpressionTextParser().parse("documentId == '" + document.getId() + "'"));
 
-            Resource resource = new FileSystemResource(kbDir.resolve(document.getStoredName()));
+            Resource resource = new FileSystemResource(UploadSupport.resolveWithin(kbDir, document.getStoredName()));
             List<Document> raw = new TikaDocumentReader(resource).get();
             List<Document> chunks = splitter.apply(raw);
 
