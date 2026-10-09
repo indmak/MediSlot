@@ -34,6 +34,11 @@ printf '%s' 'sk-your-deepseek-key' > secrets/medislot/external/deepseek/apikey
 # Lock down permissions
 chmod 700 secrets
 find secrets -type f -exec chmod 600 {} \;
+
+# The app container runs as a non-root user, so give it ownership of the files
+# (root can still read; other host users cannot). Check the uid with:
+#   docker run --rm --entrypoint id medislot-app:latest
+chown -R 1001:1001 secrets
 ```
 
 Then (re)start the stack:
