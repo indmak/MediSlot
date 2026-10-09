@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface KnowledgeSourceRepository extends JpaRepository<KnowledgeSource, Long> {
 
-    Optional<KnowledgeSource> findByType(KnowledgeSourceType type);
+    Optional<KnowledgeSource> findFirstByTypeOrderByIdAsc(KnowledgeSourceType type);
 
     List<KnowledgeSource> findAllByOrderByIdAsc();
 

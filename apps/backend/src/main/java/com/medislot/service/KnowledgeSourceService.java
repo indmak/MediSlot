@@ -130,7 +130,7 @@ public class KnowledgeSourceService {
     /** 手动同步「诊前咨询」来源（不受自动同步开关限制）。返回本次归档条数。 */
     @Transactional
     public int syncConsultation() {
-        KnowledgeSource source = sourceRepository.findByType(KnowledgeSourceType.CONSULTATION).orElse(null);
+        KnowledgeSource source = sourceRepository.findFirstByTypeOrderByIdAsc(KnowledgeSourceType.CONSULTATION).orElse(null);
         try {
             int count = consultationKbService.syncClosedConversations();
             markSynced(source, "OK", "本次归档 " + count + " 条");

@@ -72,7 +72,7 @@ public class ExternalKnowledgeService {
             int count = 0;
             for (PendingDoc doc : docs) {
                 try {
-                    if (knowledgeService.ingestMarkdown(doc.title, doc.markdown, doc.category,
+                    if (knowledgeService.ingestMarkdown(doc.title, doc.markdown, doc.category, source.getId(),
                             KnowledgeSourceType.EXTERNAL_API, KnowledgeVisibility.PUBLIC, doc.url, null) != null) {
                         count++;
                     }

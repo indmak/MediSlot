@@ -99,7 +99,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void upsertSource(KnowledgeSourceType type, String name, String description, boolean enabled) {
-        if (knowledgeSourceRepository.findByType(type).isPresent()) {
+        if (knowledgeSourceRepository.findFirstByTypeOrderByIdAsc(type).isPresent()) {
             return;
         }
         knowledgeSourceRepository.save(new KnowledgeSource(name, type, description, enabled));

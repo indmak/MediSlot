@@ -1,6 +1,7 @@
 package com.medislot.service;
 
 import com.medislot.entity.KnowledgeDocument;
+import com.medislot.entity.KnowledgeSource;
 import com.medislot.entity.KnowledgeSourceType;
 import com.medislot.entity.KnowledgeStatus;
 import com.medislot.entity.KnowledgeVisibility;
@@ -111,7 +112,7 @@ public class KnowledgeService {
         KnowledgeDocument document = new KnowledgeDocument(
                 docTitle, original, stored, file.getContentType(), file.getSize(), category, userId);
         document.setSourceType(KnowledgeSourceType.MANUAL);
-        document.setSourceId(sourceId(KnowledgeSourceType.MANUAL));
+        document.setSourceId(sourceIdForType(KnowledgeSourceType.MANUAL));
         document.setVisibility(KnowledgeVisibility.PUBLIC);
         repository.save(document);
         ingest(document);
@@ -123,10 +124,11 @@ public class KnowledgeService {
     /**
      * 将生成的 Markdown 内容写入知识库并向量化。
      *
+     * @param sourceId 来源 id（外部接口有多个来源，需由调用方指定）
      * @return 新建的文档；若内容哈希已存在（重复）则返回 {@code null}。
      */
     @Transactional
-    public KnowledgeDocument ingestMarkdown(String title, String markdown, String category,
+    public KnowledgeDocument ingestMarkdown(String title, String markdown, String category, Long sourceId,
                                             KnowledgeSourceType type, KnowledgeVisibility visibility,
                                             String sourceUrl, Long uploadedBy) {
         requireVectorStore();
@@ -147,7 +149,7 @@ public class KnowledgeService {
         KnowledgeDocument document = new KnowledgeDocument(
                 title, title + ".md", relative, "text/markdown", size, category, uploadedBy);
         document.setSourceType(type);
-        document.setSourceId(sourceId(type));
+        document.setSourceId(sourceId);
         document.setVisibility(visibility);
         document.setSourceUrl(sourceUrl);
         document.setContentHash(hash);
@@ -228,8 +230,9 @@ public class KnowledgeService {
         }
     }
 
-    private Long sourceId(KnowledgeSourceType type) {
-        return sourceRepository.findByType(type).map(s -> s.getId()).orElse(null);
+    /** 按类型解析来源 id（取第一条）。EXTERNAL_API 可能有多条，外部抓取请直接传 sourceId。 */
+    public Long sourceIdForType(KnowledgeSourceType type) {
+        return sourceRepository.findFirstByTypeOrderByIdAsc(type).map(KnowledgeSource::getId).orElse(null);
     }
 
     private String subdir(KnowledgeSourceType type) {

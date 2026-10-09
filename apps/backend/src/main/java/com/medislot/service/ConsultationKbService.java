@@ -120,6 +120,7 @@ public class ConsultationKbService {
                 + appointment.getSchedule().getDate() + "）";
         String category = doctor.getDepartment() != null ? doctor.getDepartment().getName() : "问诊记录";
         var document = knowledgeService.ingestMarkdown(title, markdown, category,
+                knowledgeService.sourceIdForType(KnowledgeSourceType.CONSULTATION),
                 KnowledgeSourceType.CONSULTATION, KnowledgeVisibility.PRIVATE, null, null);
         if (document == null) {
             conversation.setKbDocumentId(-1L);
