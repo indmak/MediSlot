@@ -40,12 +40,13 @@ public class PaymentController {
     @PostMapping("/{paymentNo}/pay")
     public String pay(@PathVariable String paymentNo, Authentication authentication, RedirectAttributes ra) {
         try {
-            paymentService.pay(paymentNo, authentication.getName());
-            ra.addFlashAttribute("message", "支付成功");
+            Payment payment = paymentService.pay(paymentNo, authentication.getName());
+            ra.addFlashAttribute("message", "支付成功，开始诊前咨询");
+            return "redirect:/consultations/by-appointment/" + payment.getAppointment().getId();
         } catch (BusinessException e) {
             ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/appointments/my";
         }
-        return "redirect:/appointments/my";
     }
 
     /** 模拟支付失败。 */

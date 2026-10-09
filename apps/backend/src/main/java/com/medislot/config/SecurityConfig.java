@@ -36,6 +36,8 @@ public class SecurityConfig {
                         .requestMatchers("/appointments/**").hasRole("PATIENT")
                         // 支付（模拟/沙箱）
                         .requestMatchers("/payments/**").hasRole("PATIENT")
+                        // 诊前咨询（患者 / 医生，归属在 service 校验）
+                        .requestMatchers("/consultations/**", "/cases/**").authenticated()
                         // 管理后台
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

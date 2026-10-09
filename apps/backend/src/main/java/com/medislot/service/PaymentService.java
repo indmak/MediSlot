@@ -30,15 +30,18 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final AppointmentRepository appointmentRepository;
     private final ScheduleRepository scheduleRepository;
+    private final ConsultationService consultationService;
     private final long expiryMinutes;
 
     public PaymentService(PaymentRepository paymentRepository,
                           AppointmentRepository appointmentRepository,
                           ScheduleRepository scheduleRepository,
+                          ConsultationService consultationService,
                           @Value("${medislot.payment.expiry-minutes:30}") long expiryMinutes) {
         this.paymentRepository = paymentRepository;
         this.appointmentRepository = appointmentRepository;
         this.scheduleRepository = scheduleRepository;
+        this.consultationService = consultationService;
         this.expiryMinutes = expiryMinutes;
     }
 
@@ -79,7 +82,10 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaidAt(LocalDateTime.now());
         payment.setMethod("MOCK");
-        return paymentRepository.save(payment);
+        Payment saved = paymentRepository.save(payment);
+        // 支付成功 → 开启诊前咨询群聊
+        consultationService.getOrCreateGroup(payment.getAppointment().getId());
+        return saved;
     }
 
     /** 取消预约时处理支付：已支付→退款，未支付→作废。 */

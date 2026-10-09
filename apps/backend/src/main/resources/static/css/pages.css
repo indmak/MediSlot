@@ -253,3 +253,173 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== 诊前咨询 / 群聊 ===== */
+.chat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+
+.chat-msg {
+    max-width: 78%;
+}
+
+.chat-msg--patient {
+    align-self: flex-end;
+}
+
+.chat-msg--doctor,
+.chat-msg--ai {
+    align-self: flex-start;
+}
+
+.chat-msg--system {
+    align-self: center;
+    max-width: 100%;
+}
+
+.chat-msg__meta {
+    font-size: 12px;
+    color: var(--medislot-text-muted);
+    margin-bottom: 4px;
+}
+
+.chat-msg--patient .chat-msg__meta {
+    text-align: right;
+}
+
+.chat-msg__body {
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.chat-msg--patient .chat-msg__body {
+    background: var(--medislot-primary);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-msg--doctor .chat-msg__body {
+    background: var(--medislot-surface);
+    border: 1px solid var(--medislot-border);
+    border-bottom-left-radius: 4px;
+}
+
+.chat-msg--ai .chat-msg__body {
+    background: var(--medislot-primary-subtle);
+    border-bottom-left-radius: 4px;
+}
+
+.chat-msg--system .chat-msg__body {
+    background: #F3F4F6;
+    color: var(--medislot-text-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+.chat-draft {
+    border: 1px solid var(--medislot-primary-border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    background: var(--medislot-surface);
+}
+
+.chat-draft__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: var(--medislot-primary-subtle);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.chat-draft__body {
+    padding: 12px 14px;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
+
+.chat-draft__note {
+    padding: 0 14px 10px;
+    font-size: 13px;
+    color: var(--medislot-text-secondary);
+}
+
+.chat-draft__review {
+    display: flex;
+    gap: var(--space-2);
+    padding: 10px 14px;
+    border-top: 1px solid var(--medislot-border);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.chat-draft__review .form-control {
+    flex: 1;
+    min-width: 160px;
+}
+
+.chat-input {
+    margin-top: var(--space-4);
+}
+
+.chat-input textarea {
+    margin-bottom: var(--space-3);
+}
+
+.chat-input__actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+}
+
+.chat-input__doctor {
+    margin-top: var(--space-3);
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+    border-top: 1px solid var(--medislot-border);
+    padding-top: var(--space-3);
+}
+
+.chat-summary {
+    white-space: pre-wrap;
+    font-family: inherit;
+    margin: var(--space-3) 0 0;
+    font-size: 14px;
+}
+
+/* ===== 医生病例研究（与群聊区分样式） ===== */
+.case-header {
+    background: #0F172A;
+    color: #fff;
+    border-radius: var(--radius-card);
+    padding: var(--space-5);
+    margin-bottom: var(--space-5);
+}
+
+.case-header__title {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.case-header__sub {
+    color: #CBD5E1;
+    font-size: 13px;
+    margin: 6px 0 0;
+}
+
+.chat--case .chat-msg--patient .chat-msg__body {
+    background: #334155;
+}
+
+.chat--case .chat-msg--ai .chat-msg__body {
+    background: #E7F3EC;
+}

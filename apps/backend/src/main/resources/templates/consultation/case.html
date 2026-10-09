@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('病例研究')}"></head>
+<body class="case-page">
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="case-header">
+        <h1 class="case-header__title">病例研究（私有）</h1>
+        <p class="case-header__sub">
+            <span th:text="${conversation.appointment.patient.name}">王小明</span>
+            <span class="dot">·</span>
+            <span th:text="${'就诊原因：' + (conversation.appointment.reason != null ? conversation.appointment.reason : '未填写')}">就诊原因</span>
+            <span class="dot">·</span>
+            <span>仅医生可见，患者不可见</span>
+        </p>
+    </header>
+
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+
+    <div class="chat chat--case" th:if="${!#lists.isEmpty(messages)}">
+        <div class="chat-msg" th:each="m : ${messages}"
+             th:classappend="${m.senderType.name() == 'DOCTOR' ? 'chat-msg--patient' : (m.senderType.name() == 'AI' ? 'chat-msg--ai' : 'chat-msg--system')}">
+            <div class="chat-msg__meta">
+                <span th:text="${m.senderType.label}">医生</span>
+                <span class="dot">·</span>
+                <span th:text="${#temporals.format(m.createdAt,'MM-dd HH:mm')}">10-15 09:01</span>
+            </div>
+            <div class="chat-msg__body" th:text="${m.content}">内容</div>
+        </div>
+    </div>
+    <div th:if="${#lists.isEmpty(messages)}" class="empty-state">
+        <i class="bi bi-journal-medical empty-state__icon"></i>
+        <p class="empty-state__title">向 AI 请教这个病例</p>
+        <p class="empty-state__hint">例如：鉴别诊断思路、需要补充哪些检查</p>
+    </div>
+
+    <div class="card form-card chat-input" th:if="${conversation.status.name() == 'ACTIVE'}">
+        <form th:action="@{/cases/{id}/messages(id=${conversation.id})}" method="post">
+            <textarea class="form-control" name="content" rows="2" placeholder="向 AI 提问…" required></textarea>
+            <div class="chat-input__actions">
+                <button class="btn btn-primary" type="submit">发送</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

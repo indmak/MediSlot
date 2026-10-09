@@ -8,6 +8,7 @@ import com.medislot.service.AdminService;
 import com.medislot.service.DepartmentService;
 import com.medislot.service.DoctorService;
 import com.medislot.service.ScheduleService;
+import com.medislot.service.SettingService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -31,15 +32,18 @@ public class AdminController {
     private final DepartmentService departmentService;
     private final DoctorService doctorService;
     private final ScheduleService scheduleService;
+    private final SettingService settingService;
 
     public AdminController(AdminService adminService,
                            DepartmentService departmentService,
                            DoctorService doctorService,
-                           ScheduleService scheduleService) {
+                           ScheduleService scheduleService,
+                           SettingService settingService) {
         this.adminService = adminService;
         this.departmentService = departmentService;
         this.doctorService = doctorService;
         this.scheduleService = scheduleService;
+        this.settingService = settingService;
     }
 
     // ===== 仪表盘 =====
@@ -152,6 +156,24 @@ public class AdminController {
         scheduleService.create(form);
         ra.addFlashAttribute("message", "排班已添加");
         return "redirect:/admin/schedules?doctorId=" + form.getDoctorId();
+    }
+
+    // ===== 设置中心 =====
+
+    @GetMapping("/settings")
+    public String settings(Model model) {
+        model.addAttribute("settings", settingService.list());
+        model.addAttribute("defaults", settingService.defaults());
+        return "admin/settings";
+    }
+
+    @PostMapping("/settings")
+    public String saveSetting(@RequestParam String key,
+                              @RequestParam String value,
+                              RedirectAttributes ra) {
+        settingService.set(key, value);
+        ra.addFlashAttribute("message", "设置已保存");
+        return "redirect:/admin/settings";
     }
 
     private void flashForm(RedirectAttributes ra, Object form, BindingResult bindingResult) {

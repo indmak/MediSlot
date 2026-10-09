@@ -1,10 +1,12 @@
 package com.medislot.config;
 
+import com.medislot.entity.AppSetting;
 import com.medislot.entity.Department;
 import com.medislot.entity.Doctor;
 import com.medislot.entity.Role;
 import com.medislot.entity.Schedule;
 import com.medislot.entity.User;
+import com.medislot.repository.AppSettingRepository;
 import com.medislot.repository.DepartmentRepository;
 import com.medislot.repository.DoctorRepository;
 import com.medislot.repository.ScheduleRepository;
@@ -20,7 +22,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 启动初始化：
@@ -39,6 +43,7 @@ public class DataInitializer implements CommandLineRunner {
     private final DepartmentRepository departmentRepository;
     private final DoctorRepository doctorRepository;
     private final ScheduleRepository scheduleRepository;
+    private final AppSettingRepository appSettingRepository;
     private final PasswordEncoder passwordEncoder;
 
     private final boolean seedEnabled;
@@ -49,6 +54,7 @@ public class DataInitializer implements CommandLineRunner {
                            DepartmentRepository departmentRepository,
                            DoctorRepository doctorRepository,
                            ScheduleRepository scheduleRepository,
+                           AppSettingRepository appSettingRepository,
                            PasswordEncoder passwordEncoder,
                            @Value("${medislot.seed.enabled:false}") boolean seedEnabled,
                            @Value("${medislot.admin.phone:13000000000}") String adminPhone,
@@ -57,6 +63,7 @@ public class DataInitializer implements CommandLineRunner {
         this.departmentRepository = departmentRepository;
         this.doctorRepository = doctorRepository;
         this.scheduleRepository = scheduleRepository;
+        this.appSettingRepository = appSettingRepository;
         this.passwordEncoder = passwordEncoder;
         this.seedEnabled = seedEnabled;
         this.adminPhone = adminPhone;
@@ -66,11 +73,26 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         ensureAdmin();
+        ensureSettings();
         if (seedEnabled) {
             seedDemoData();
         } else {
             log.info("[init] 演示数据未启用（medislot.seed.enabled=false）");
         }
+    }
+
+    /** 幂等写入系统设置默认值（管理员设置中心）。 */
+    private void ensureSettings() {
+        Map<String, String[]> defaults = new LinkedHashMap<>();
+        defaults.put("consultation.enabled", new String[]{"true", "诊前咨询功能开关"});
+        defaults.put("consultation.max-messages", new String[]{"30", "单个咨询会话消息上限"});
+        defaults.put("consultation.rate-limit-seconds", new String[]{"3", "患者发送消息的最小间隔（秒）"});
+        defaults.put("consultation.max-history", new String[]{"20", "发送给 AI 的最近历史消息条数"});
+        defaults.forEach((key, value) -> {
+            if (appSettingRepository.findById(key).isEmpty()) {
+                appSettingRepository.save(new AppSetting(key, value[0], value[1]));
+            }
+        });
     }
 
     /** 幂等地保证存在一个管理员账号（生产环境同样内置）。 */

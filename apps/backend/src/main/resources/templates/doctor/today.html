@@ -37,6 +37,10 @@
                 <div class="appt-card__no" th:text="${'编号 ' + a.appointmentNo}">编号 A20261008-001</div>
             </div>
             <div class="appt-card__actions">
+                <a class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener"
+                   th:href="@{/consultations/by-appointment/{id}(id=${a.id})}">诊前咨询</a>
+                <a class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener"
+                   th:href="@{/cases/by-appointment/{id}(id=${a.id})}">病例研究</a>
                 <form th:if="${a.status.name() == 'PENDING'}"
                       th:action="@{/doctor/appointments/{id}/checkin(id=${a.id})}" method="post">
                     <button class="btn btn-primary btn-sm" type="submit">已到诊</button>

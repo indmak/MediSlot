@@ -54,6 +54,14 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 - Cancelling a paid appointment triggers an automatic refund; cancelling an unpaid one voids the order.
 - No real gateway is wired yet — the checkout is a self-contained mock, so the flow can be swapped to Alipay sandbox/production later without touching the surrounding logic.
 
+**Pre-consultation (AI)**
+
+- After payment, a **group chat** opens with the patient, the doctor, and an AI assistant. The AI talks to the patient (collects symptoms, gives general advice — never diagnoses or prescribes).
+- The doctor does **not** chat with the AI in this window. Instead the doctor **directs** the AI (e.g. "produce a recent diet plan"); the AI returns a **draft**, and the doctor reviews it — approve / reject / adjust (adjust regenerates a new version).
+- The doctor also has a **separate, private case-study window** to consult the AI about the case; it is invisible to the patient.
+- The doctor can generate an AI **consultation summary** and close the session.
+- Powered by the **DeepSeek** API (`deepseek-flash` by default, OpenAI-compatible). The API key is injected as a mounted secret, never in code or env vars. Without a key the app falls back to a built-in mock so the flow still works.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -67,6 +75,7 @@ The repository is a monorepo. Phase 1 ships a Thymeleaf web app; the `api/` pack
 | Validation | Jakarta Bean Validation |
 | Build | Maven 3.10 (with wrapper) |
 | Deploy | Docker Compose (app + database containers) |
+| AI | DeepSeek (OpenAI-compatible chat completions) |
 
 ## Architecture
 

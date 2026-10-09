@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('设置中心')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title">设置中心</h1>
+        <p class="page-subtitle">通用键值配置，修改后即时生效</p>
+    </header>
+
+    <nav th:replace="~{layout :: adminNav('settings')}"></nav>
+
+    <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
+
+    <div class="card mb-4">
+        <table class="table ms-table">
+            <thead>
+            <tr><th>键</th><th>值</th><th>说明</th><th>更新时间</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${settings}">
+                <td><code th:text="${s.settingKey}">consultation.max-messages</code></td>
+                <td th:text="${s.settingValue}">30</td>
+                <td th:text="${s.description}">说明</td>
+                <td th:text="${s.updatedAt != null ? #temporals.format(s.updatedAt,'yyyy-MM-dd HH:mm') : '-'}">-</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(settings)}">
+                <td colspan="4" class="text-center text-muted">暂无设置</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card form-card">
+        <h2 class="section-title">新增 / 修改设置</h2>
+        <form th:action="@{/admin/settings}" method="post" class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="key">键</label>
+                <input class="form-control" id="key" name="key" type="text" list="settingKeys" required>
+                <datalist id="settingKeys">
+                    <option th:each="k : ${defaults.keySet()}" th:value="${k}"></option>
+                </datalist>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="value">值</label>
+                <input class="form-control" id="value" name="value" type="text" required>
+            </div>
+            <div class="col-12 col-md-4 d-flex align-items-end">
+                <button class="btn btn-primary" type="submit">保存</button>
+            </div>
+        </form>
+        <p class="page-subtitle" style="margin-top:12px">内置默认值：
+            <span th:each="e : ${defaults}" th:text="${e.key + '=' + e.value + '  '}"></span>
+        </p>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

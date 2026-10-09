@@ -63,6 +63,9 @@
                     </div>
                     <div class="appt-card__actions">
                         <a class="btn btn-primary btn-sm"
+                           th:if="${a.payment != null and a.payment.status.name() == 'PAID'}"
+                           th:href="@{/consultations/by-appointment/{id}(id=${a.id})}">进入诊前咨询</a>
+                        <a class="btn btn-primary btn-sm"
                            th:if="${a.payment != null and a.payment.status.name() == 'UNPAID'}"
                            th:href="@{/payments/{no}(no=${a.payment.paymentNo})}">去支付</a>
                         <form th:action="@{/appointments/{id}/cancel(id=${a.id})}" method="post">

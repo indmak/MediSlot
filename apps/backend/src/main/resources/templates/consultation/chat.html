@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('诊前咨询')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title">诊前咨询</h1>
+        <p class="page-subtitle">
+            <span th:text="${conversation.appointment.schedule.doctor.name} + ' · ' + ${conversation.appointment.schedule.doctor.department.name}">张明华 · 内科</span>
+            <span class="dot">·</span>
+            <span th:text="${'患者 ' + conversation.appointment.patient.name}">患者 王小明</span>
+            <span class="dot">·</span>
+            <span th:text="${#temporals.format(conversation.appointment.schedule.date,'M月d日')} + ' ' + ${#temporals.format(conversation.appointment.schedule.startTime,'HH:mm')}">10月15日 09:00</span>
+            <span class="badge-status"
+                  th:classappend="${conversation.status.name() == 'ACTIVE' ? 'badge-completed' : 'badge-full'}"
+                  th:text="${conversation.status.label}">进行中</span>
+        </p>
+    </header>
+
+    <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+
+    <section class="card summary-card" th:if="${conversation.summary != null}">
+        <h2 class="section-title">问诊摘要（AI 生成）</h2>
+        <pre class="chat-summary" th:text="${conversation.summary}"></pre>
+    </section>
+
+    <div class="chat" th:if="${!#lists.isEmpty(messages)}">
+        <div class="chat-msg" th:each="m : ${messages}"
+             th:classappend="${m.senderType.name() == 'PATIENT' ? 'chat-msg--patient' : (m.senderType.name() == 'DOCTOR' ? 'chat-msg--doctor' : (m.senderType.name() == 'AI' ? 'chat-msg--ai' : 'chat-msg--system'))}">
+            <div class="chat-msg__meta">
+                <span th:text="${m.senderType.label}">AI 助手</span>
+                <span class="dot">·</span>
+                <span th:text="${#temporals.format(m.createdAt,'MM-dd HH:mm')}">10-15 09:01</span>
+                <span th:if="${m.messageType.name() == 'DIRECTIVE'}" class="badge-status badge-pending">医生指令</span>
+            </div>
+
+            <!-- 普通消息 -->
+            <div class="chat-msg__body" th:if="${m.messageType.name() != 'DRAFT'}"
+                 th:text="${m.content}">消息内容</div>
+
+            <!-- AI 草稿 -->
+            <div class="chat-draft" th:if="${m.messageType.name() == 'DRAFT'}">
+                <div class="chat-draft__head">
+                    <span>AI 草稿</span>
+                    <span class="badge-status"
+                          th:classappend="${m.reviewStatus == null ? 'badge-pending' : (m.reviewStatus.name() == 'APPROVED' ? 'badge-completed' : (m.reviewStatus.name() == 'REJECTED' ? 'badge-cancelled' : 'badge-checked'))}"
+                          th:text="${m.reviewStatus == null ? '待核实' : m.reviewStatus.label}">待核实</span>
+                </div>
+                <div class="chat-draft__body" th:text="${m.content}">草稿内容</div>
+                <div class="chat-draft__note" th:if="${m.reviewNote != null}" th:text="${'医生备注：' + m.reviewNote}"></div>
+
+                <form th:if="${isDoctor and m.reviewStatus != null and m.reviewStatus.name() == 'PENDING'}"
+                      th:action="@{/consultations/{id}/drafts/{mid}/review(id=${conversation.id}, mid=${m.id})}"
+                      method="post" class="chat-draft__review">
+                    <input class="form-control form-control-sm" type="text" name="note" placeholder="核实备注（反对/调整时可填）">
+                    <button class="btn btn-sm btn-primary" type="submit" name="status" value="APPROVED">同意</button>
+                    <button class="btn btn-sm btn-danger-outline" type="submit" name="status" value="REJECTED">反对</button>
+                    <button class="btn btn-sm btn-outline-primary" type="submit" name="status" value="ADJUSTED">调整并重生成</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div th:if="${#lists.isEmpty(messages)}" class="empty-state">
+        <i class="bi bi-chat-dots empty-state__icon"></i>
+        <p class="empty-state__title">还没有消息</p>
+        <p class="empty-state__hint" th:text="${isDoctor ? '患者尚未开始咨询，你可以先指挥 AI 产出方案' : '描述一下你的不适，AI 助手会先帮你了解情况'}">开始对话吧</p>
+    </div>
+
+    <!-- 输入区 -->
+    <div class="card form-card chat-input" th:if="${conversation.status.name() == 'ACTIVE'}">
+        <form th:action="@{/consultations/{id}/messages(id=${conversation.id})}" method="post">
+            <textarea class="form-control" name="content" rows="2" placeholder="输入消息…" required></textarea>
+            <div class="chat-input__actions">
+                <th:block th:if="${isDoctor}">
+                    <button class="btn btn-outline-primary" type="submit" name="action" value="chat">回复患者</button>
+                    <button class="btn btn-primary" type="submit" name="action" value="directive">指挥 AI</button>
+                </th:block>
+                <button th:if="${isPatient}" class="btn btn-primary" type="submit" name="action" value="chat">发送</button>
+            </div>
+        </form>
+        <div class="chat-input__doctor" th:if="${isDoctor}">
+            <form th:action="@{/consultations/{id}/summary(id=${conversation.id})}" method="post" class="d-inline">
+                <button class="btn btn-sm btn-outline-primary" type="submit">生成摘要</button>
+            </form>
+            <form th:action="@{/consultations/{id}/close(id=${conversation.id})}" method="post" class="d-inline">
+                <button class="btn btn-sm btn-link" type="submit">关闭会话</button>
+            </form>
+        </div>
+    </div>
+    <div class="alert alert-success" th:if="${conversation.status.name() == 'CLOSED'}">会话已关闭</div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

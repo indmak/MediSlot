@@ -11,6 +11,8 @@
 排班 Schedule   1 ── N 预约 Appointment
 患者 User       1 ── N 预约 Appointment
 预约 Appointment 1 ── 1 支付 Payment
+预约 Appointment 1 ── N 会话 Conversation
+会话 Conversation 1 ── N 消息 ConversationMessage
 ```
 
 一句话：一个科室有多个医生，一个医生有多个排班，一个排班能被多个患者预约，一个预约对应一笔支付。
@@ -104,6 +106,52 @@
 > **超时作废**：定时任务每 60 秒扫描 `status=UNPAID AND expires_at < now` 的订单，
 > 标记为 `EXPIRED`，把对应预约置为 `CANCELLED` 并释放号源。
 > **取消预约**：已支付 → 标记 `REFUNDED`（自动退款）；未支付 → 标记 `EXPIRED`。
+
+### conversation（会话）
+
+一个预约有：一个群聊（`GROUP`：患者+医生+AI）与一个医生病例研究窗口（`DOCTOR_PRIVATE`：医生+AI，患者不可见）。
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | BIGINT | PK, auto | 主键 |
+| appointment_id | BIGINT | FK→appointment | 关联预约 |
+| scope | VARCHAR(20) | NOT NULL | `GROUP` / `DOCTOR_PRIVATE` |
+| doctor_id | BIGINT | FK→doctor | 归属医生 |
+| status | VARCHAR(20) | NOT NULL | `ACTIVE` / `CLOSED` |
+| ai_model | VARCHAR(50) | | 使用的模型 |
+| summary | VARCHAR(2000) | | AI 生成的问诊摘要 |
+| created_at / updated_at / closed_at | DATETIME | | |
+
+唯一约束：`(appointment_id, scope)`。
+
+### conversation_message（会话消息）
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | BIGINT | PK, auto | 主键 |
+| conversation_id | BIGINT | FK→conversation | 所属会话 |
+| sender_type | VARCHAR(20) | NOT NULL | `PATIENT` / `DOCTOR` / `AI` / `SYSTEM` |
+| sender_id | BIGINT | | 人类发送者 user_id |
+| message_type | VARCHAR(20) | NOT NULL | `CHAT` / `DIRECTIVE`（医生指挥 AI）/ `DRAFT`（AI 草稿） |
+| content | VARCHAR(4000) | NOT NULL | 内容 |
+| parent_message_id | BIGINT | | DRAFT 对应的 DIRECTIVE |
+| review_status | VARCHAR(20) | | 草稿核实：`PENDING`/`APPROVED`/`REJECTED`/`ADJUSTED` |
+| reviewed_by | BIGINT | | 核实的医生 |
+| review_note | VARCHAR(500) | | 核实备注 |
+| model / prompt_tokens / completion_tokens | | | AI 消息用量 |
+| created_at | DATETIME | NOT NULL | |
+
+### app_setting（系统设置）
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| setting_key | VARCHAR(100) | PK | 如 `consultation.max-messages` |
+| setting_value | VARCHAR(500) | | 值 |
+| description | VARCHAR(255) | | 说明 |
+| updated_at | DATETIME | | 更新时间 |
+
+> 默认写入：`consultation.enabled=true`、`consultation.max-messages=30`、
+> `consultation.rate-limit-seconds=3`、`consultation.max-history=20`。
 
 ## 预约状态机
 
