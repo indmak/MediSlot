@@ -32,10 +32,13 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -127,5 +130,26 @@ class ConsultationPageTest {
         mockMvc.perform(get("/admin/settings").with(user("admin").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("设置中心")));
+    }
+
+    @Test
+    void messagesJsonReturnsIncrement() throws Exception {
+        mockMvc.perform(get("/consultations/" + group.getId() + "/messages.json?after=0")
+                        .with(user(patientPhone).roles("PATIENT")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].senderType").exists())
+                .andExpect(jsonPath("$[0].time").exists());
+    }
+
+    @Test
+    void postMessageJsonCreatesReply() throws Exception {
+        mockMvc.perform(post("/consultations/" + group.getId() + "/messages.json")
+                        .with(user(doctorPhone).roles("DOCTOR"))
+                        .with(csrf())
+                        .param("content", "给一个最近的饮食方案")
+                        .param("action", "directive"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ok").value(true));
     }
 }

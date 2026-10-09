@@ -423,3 +423,26 @@
 .chat--case .chat-msg--ai .chat-msg__body {
     background: #E7F3EC;
 }
+
+/* 实时：正在生成提示 */
+.chat-typing {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--medislot-text-secondary);
+    font-size: 13px;
+    margin: var(--space-3) 0;
+}
+
+.chat-typing__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--medislot-primary);
+    animation: chat-blink 1s infinite ease-in-out;
+}
+
+@keyframes chat-blink {
+    0%, 100% { opacity: .2; }
+    50% { opacity: 1; }
+}

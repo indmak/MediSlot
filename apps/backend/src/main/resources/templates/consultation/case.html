@@ -17,8 +17,10 @@
     </header>
 
     <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+    <div class="alert alert-danger" id="chatError" style="display:none"></div>
 
-    <div class="chat chat--case" th:if="${!#lists.isEmpty(messages)}">
+    <div class="chat chat--case" id="chatMessages"
+         th:attr="data-last-id=${lastMessageId},data-conv=${conversation.id},data-is-doctor=true,data-endpoint='/cases'">
         <div class="chat-msg" th:each="m : ${messages}"
              th:classappend="${m.senderType.name() == 'DOCTOR' ? 'chat-msg--patient' : (m.senderType.name() == 'AI' ? 'chat-msg--ai' : 'chat-msg--system')}">
             <div class="chat-msg__meta">
@@ -29,17 +31,20 @@
             <div class="chat-msg__body" th:text="${m.content}">内容</div>
         </div>
     </div>
-    <div th:if="${#lists.isEmpty(messages)}" class="empty-state">
+    <div th:if="${#lists.isEmpty(messages)}" class="empty-state" id="chatEmpty">
         <i class="bi bi-journal-medical empty-state__icon"></i>
         <p class="empty-state__title">向 AI 请教这个病例</p>
         <p class="empty-state__hint">例如：鉴别诊断思路、需要补充哪些检查</p>
     </div>
+    <div class="chat-typing" id="chatTyping" style="display:none">
+        <span class="chat-typing__dot"></span> AI 正在生成…
+    </div>
 
     <div class="card form-card chat-input" th:if="${conversation.status.name() == 'ACTIVE'}">
-        <form th:action="@{/cases/{id}/messages(id=${conversation.id})}" method="post">
+        <form id="chatForm" th:action="@{/cases/{id}/messages(id=${conversation.id})}" method="post">
             <textarea class="form-control" name="content" rows="2" placeholder="向 AI 提问…" required></textarea>
             <div class="chat-input__actions">
-                <button class="btn btn-primary" type="submit">发送</button>
+                <button class="btn btn-primary" type="submit" name="action" value="chat">发送</button>
             </div>
         </form>
     </div>
@@ -47,5 +52,6 @@
 
 <footer th:replace="~{layout :: footer}"></footer>
 <script th:replace="~{layout :: scripts}"></script>
+<script th:src="@{/js/chat.js}"></script>
 </body>
 </html>

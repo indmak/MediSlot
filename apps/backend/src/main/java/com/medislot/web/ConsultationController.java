@@ -1,6 +1,8 @@
 package com.medislot.web;
 
+import com.medislot.dto.MessageView;
 import com.medislot.entity.Conversation;
+import com.medislot.entity.ConversationMessage;
 import com.medislot.entity.MessageType;
 import com.medislot.entity.ReviewStatus;
 import com.medislot.entity.Role;
@@ -16,7 +18,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 诊前咨询群聊（患者 + 医生 + AI）。
@@ -44,12 +50,51 @@ public class ConsultationController {
         User user = userService.findByPhone(authentication.getName());
         consultationService.assertCanViewGroup(id, user);
         Conversation conversation = consultationService.getRequired(id);
+        List<ConversationMessage> messages = consultationService.listMessages(id);
         model.addAttribute("conversation", conversation);
-        model.addAttribute("messages", consultationService.listMessages(id));
+        model.addAttribute("messages", messages);
+        model.addAttribute("lastMessageId", messages.isEmpty() ? 0L : messages.get(messages.size() - 1).getId());
         model.addAttribute("isDoctor", user.getRole() == Role.DOCTOR);
         model.addAttribute("isPatient", user.getRole() == Role.PATIENT);
         return "consultation/chat";
     }
+
+    // ===== 实时：增量消息（JSON） =====
+
+    @GetMapping("/{id}/messages.json")
+    @ResponseBody
+    public List<MessageView> messagesJson(@PathVariable Long id,
+                                          @RequestParam(defaultValue = "0") Long after,
+                                          Authentication authentication) {
+        User user = userService.findByPhone(authentication.getName());
+        consultationService.assertCanViewGroup(id, user);
+        return consultationService.listMessages(id).stream()
+                .filter(m -> m.getId() != null && m.getId() > after)
+                .map(MessageView::of)
+                .toList();
+    }
+
+    @PostMapping("/{id}/messages.json")
+    @ResponseBody
+    public Map<String, Object> postMessageJson(@PathVariable Long id,
+                                               Authentication authentication,
+                                               @RequestParam String content,
+                                               @RequestParam(defaultValue = "chat") String action) {
+        User user = userService.findByPhone(authentication.getName());
+        try {
+            if (user.getRole() == Role.DOCTOR) {
+                MessageType type = "directive".equals(action) ? MessageType.DIRECTIVE : MessageType.CHAT;
+                consultationService.postDoctorGroupMessage(id, user, content, type);
+            } else {
+                consultationService.postPatientMessage(id, user, content);
+            }
+            return Map.of("ok", true);
+        } catch (BusinessException e) {
+            return Map.of("ok", false, "error", e.getMessage());
+        }
+    }
+
+    // ===== 表单动作（审核 / 摘要 / 关闭） =====
 
     @PostMapping("/{id}/messages")
     public String postMessage(@PathVariable Long id,

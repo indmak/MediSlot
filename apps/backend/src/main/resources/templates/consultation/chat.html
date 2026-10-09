@@ -21,13 +21,15 @@
 
     <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
     <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+    <div class="alert alert-danger" id="chatError" style="display:none"></div>
 
     <section class="card summary-card" th:if="${conversation.summary != null}">
         <h2 class="section-title">问诊摘要（AI 生成）</h2>
         <pre class="chat-summary" th:text="${conversation.summary}"></pre>
     </section>
 
-    <div class="chat" th:if="${!#lists.isEmpty(messages)}">
+    <div class="chat" id="chatMessages"
+         th:attr="data-last-id=${lastMessageId},data-conv=${conversation.id},data-is-doctor=${isDoctor},data-endpoint='/consultations'">
         <div class="chat-msg" th:each="m : ${messages}"
              th:classappend="${m.senderType.name() == 'PATIENT' ? 'chat-msg--patient' : (m.senderType.name() == 'DOCTOR' ? 'chat-msg--doctor' : (m.senderType.name() == 'AI' ? 'chat-msg--ai' : 'chat-msg--system'))}">
             <div class="chat-msg__meta">
@@ -36,12 +38,7 @@
                 <span th:text="${#temporals.format(m.createdAt,'MM-dd HH:mm')}">10-15 09:01</span>
                 <span th:if="${m.messageType.name() == 'DIRECTIVE'}" class="badge-status badge-pending">医生指令</span>
             </div>
-
-            <!-- 普通消息 -->
-            <div class="chat-msg__body" th:if="${m.messageType.name() != 'DRAFT'}"
-                 th:text="${m.content}">消息内容</div>
-
-            <!-- AI 草稿 -->
+            <div class="chat-msg__body" th:if="${m.messageType.name() != 'DRAFT'}" th:text="${m.content}">消息内容</div>
             <div class="chat-draft" th:if="${m.messageType.name() == 'DRAFT'}">
                 <div class="chat-draft__head">
                     <span>AI 草稿</span>
@@ -51,7 +48,6 @@
                 </div>
                 <div class="chat-draft__body" th:text="${m.content}">草稿内容</div>
                 <div class="chat-draft__note" th:if="${m.reviewNote != null}" th:text="${'医生备注：' + m.reviewNote}"></div>
-
                 <form th:if="${isDoctor and m.reviewStatus != null and m.reviewStatus.name() == 'PENDING'}"
                       th:action="@{/consultations/{id}/drafts/{mid}/review(id=${conversation.id}, mid=${m.id})}"
                       method="post" class="chat-draft__review">
@@ -63,15 +59,17 @@
             </div>
         </div>
     </div>
-    <div th:if="${#lists.isEmpty(messages)}" class="empty-state">
+    <div th:if="${#lists.isEmpty(messages)}" class="empty-state" id="chatEmpty">
         <i class="bi bi-chat-dots empty-state__icon"></i>
         <p class="empty-state__title">还没有消息</p>
         <p class="empty-state__hint" th:text="${isDoctor ? '患者尚未开始咨询，你可以先指挥 AI 产出方案' : '描述一下你的不适，AI 助手会先帮你了解情况'}">开始对话吧</p>
     </div>
+    <div class="chat-typing" id="chatTyping" style="display:none">
+        <span class="chat-typing__dot"></span> AI 正在生成…
+    </div>
 
-    <!-- 输入区 -->
     <div class="card form-card chat-input" th:if="${conversation.status.name() == 'ACTIVE'}">
-        <form th:action="@{/consultations/{id}/messages(id=${conversation.id})}" method="post">
+        <form id="chatForm" th:action="@{/consultations/{id}/messages(id=${conversation.id})}" method="post">
             <textarea class="form-control" name="content" rows="2" placeholder="输入消息…" required></textarea>
             <div class="chat-input__actions">
                 <th:block th:if="${isDoctor}">
@@ -95,5 +93,6 @@
 
 <footer th:replace="~{layout :: footer}"></footer>
 <script th:replace="~{layout :: scripts}"></script>
+<script th:src="@{/js/chat.js}"></script>
 </body>
 </html>
