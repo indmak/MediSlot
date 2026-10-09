@@ -9,11 +9,16 @@
 <main class="content-wrapper">
     <header class="page-header">
         <h1 class="page-title">知识库来源</h1>
-        <p class="page-subtitle">管理知识来源：人工上传、诊前咨询自动归档、外部接口（下一阶段）</p>
+        <p class="page-subtitle">人工上传 · 诊前咨询自动归档 · 外部接口批量导入</p>
     </header>
 
     <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
     <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+
+    <div class="d-flex justify-content-end gap-2 mb-3">
+        <a th:href="@{/admin/knowledge/sources/new(preset='pubmed')}" class="btn btn-outline-primary">用 PubMed 示例新建</a>
+        <a th:href="@{/admin/knowledge/sources/new}" class="btn btn-primary">新建外部来源</a>
+    </div>
 
     <div class="card">
         <table class="table ms-table">
@@ -40,12 +45,23 @@
                           th:action="@{/admin/knowledge/sources/consultation/sync}" method="post" class="d-inline">
                         <button class="btn btn-sm btn-primary" type="submit">立即同步</button>
                     </form>
-                    <form th:if="${s.type.name() != 'EXTERNAL_API'}"
+                    <form th:if="${s.type.name() == 'EXTERNAL_API'}"
+                          th:action="@{/admin/knowledge/sources/{id}/sync(id=${s.id})}" method="post" class="d-inline">
+                        <button class="btn btn-sm btn-primary" type="submit">立即同步</button>
+                    </form>
+                    <a th:if="${s.type.name() == 'EXTERNAL_API'}"
+                       th:href="@{/admin/knowledge/sources/{id}/edit(id=${s.id})}"
+                       class="btn btn-sm btn-outline-primary">编辑</a>
+                    <form th:if="${s.type.name() != 'MANUAL'}"
                           th:action="@{/admin/knowledge/sources/{id}/toggle(id=${s.id})}" method="post" class="d-inline">
                         <button class="btn btn-sm btn-outline-primary" type="submit"
                                 th:text="${s.enabled ? '停用' : '启用'}">停用</button>
                     </form>
-                    <span th:if="${s.type.name() == 'EXTERNAL_API'}" class="text-muted">下一阶段开放配置</span>
+                    <form th:if="${s.type.name() == 'EXTERNAL_API'}"
+                          th:action="@{/admin/knowledge/sources/{id}/delete(id=${s.id})}" method="post" class="d-inline"
+                          onsubmit="return confirm('删除该来源及其所有文档？此操作不可恢复。');">
+                        <button class="btn btn-sm btn-danger-outline" type="submit">删除</button>
+                    </form>
                 </td>
             </tr>
             </tbody>
@@ -53,10 +69,10 @@
     </div>
 
     <p class="page-subtitle" style="margin-top:12px">
-        诊前咨询来源会把「已关闭」会话（脱敏后）自动归档，标记为<b>私有</b>，仅医生 / 管理员 / 维护员在知识库问答中可见；
-        患者侧诊前咨询检索增强不会命中。<br>
-        自动同步开关与最小消息数在 <a th:href="@{/admin/settings}">设置中心</a>：
-        <code>kb.consultation.auto-sync</code>、<code>kb.consultation.min-messages</code>。
+        诊前咨询来源：把「已关闭」会话（脱敏后）自动归档，标记为<b>私有</b>，仅医生 / 管理员 / 维护员在知识库问答中可见；
+        自动同步开关与最小消息数在 <a th:href="@{/admin/settings}">设置中心</a>。<br>
+        外部接口来源：按可配置 REST（list→detail→Markdown 模板）抓取近一年的外部新知识，入库为 PUBLIC；
+        <code>schedule_cron</code> 留空则仅手动同步。<br>
         <a th:href="@{/admin/knowledge}">← 返回知识库</a>
     </p>
 </main>

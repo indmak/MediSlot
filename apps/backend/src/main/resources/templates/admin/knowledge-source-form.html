@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{layout :: head('外部来源配置')}"></head>
+<body>
+<nav th:replace="~{layout :: nav}"></nav>
+
+<nav th:replace="~{layout :: adminNav('sources')}"></nav>
+
+<main class="content-wrapper">
+    <header class="page-header">
+        <h1 class="page-title" th:text="${mode == 'edit' ? '编辑外部来源' : '新建外部来源'}">新建外部来源</h1>
+        <p class="page-subtitle">配置一个可抓取的第三方 REST 接口，渲染成 Markdown 后写入知识库</p>
+    </header>
+
+    <div class="card form-card">
+        <form th:action="${mode == 'edit'}
+                        ? @{/admin/knowledge/sources/{id}(id=${sourceId})}
+                        : @{/admin/knowledge/sources}" method="post">
+            <div class="mb-3">
+                <label class="form-label" for="name">来源名称</label>
+                <input class="form-control" id="name" name="name" type="text" th:value="${formName}" required
+                       placeholder="如：PubMed 文献">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="description">说明（选填）</label>
+                <input class="form-control" id="description" name="description" type="text"
+                       th:value="${formDescription}" placeholder="抓取什么内容">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="configJson">抓取配置（JSON）</label>
+                <textarea class="form-control" id="configJson" name="configJson" rows="20"
+                          style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px"
+                          placeholder='{ "baseUrl": "...", "list": { ... }, "fields": { ... }, "template": "..." }'
+                          th:text="${formConfig}"></textarea>
+                <div class="form-text">
+                    字段：<code>baseUrl</code>、<code>keyword</code>、<code>sinceDays</code>、<code>maxItems</code>、
+                    <code>requestDelayMs</code>、<code>category</code>、<code>auth{secretPath,header,scheme}</code>、
+                    <code>list{path,query,headers,itemsPath}</code>、<code>detail{path,query,responsePath}</code>、
+                    <code>fields</code>（变量→JSON 路径）、<code>computed</code>（变量→字面量模板）、
+                    <code>template</code>（Markdown）。
+                    占位符：<code>{{keyword}}</code>、<code>{{id}}</code>、<code>{{sinceDate}}</code>、<code>{{today}}</code> 等。
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="scheduleCron">定时表达式（选填，Spring 6 段 cron）</label>
+                <input class="form-control" id="scheduleCron" name="scheduleCron" type="text"
+                       th:value="${formCron}" placeholder="留空=仅手动；如 0 0 3 * * * 表示每天 3 点">
+            </div>
+            <div class="mb-3 form-check" th:if="${mode == 'edit'}">
+                <input class="form-check-input" type="checkbox" id="enabled" name="enabled" value="true"
+                       th:checked="${formEnabled}">
+                <label class="form-check-label" for="enabled">启用</label>
+            </div>
+
+            <div class="form-actions d-flex gap-2">
+                <button class="btn btn-primary" type="submit"
+                        th:text="${mode == 'edit' ? '保存' : '创建'}">创建</button>
+                <a class="btn btn-outline-primary" th:href="@{/admin/knowledge/sources}">取消</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+<footer th:replace="~{layout :: footer}"></footer>
+<script th:replace="~{layout :: scripts}"></script>
+</body>
+</html>

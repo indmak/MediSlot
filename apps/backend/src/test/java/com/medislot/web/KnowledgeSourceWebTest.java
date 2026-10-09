@@ -52,4 +52,20 @@ class KnowledgeSourceWebTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("按来源筛选")));
     }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void newExternalSourceFormRenders() throws Exception {
+        mockMvc.perform(get("/admin/knowledge/sources/new"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("新建外部来源")));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void pubmedPresetPrefillsForm() throws Exception {
+        mockMvc.perform(get("/admin/knowledge/sources/new").param("preset", "pubmed"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("eutils.ncbi.nlm.nih.gov")));
+    }
 }

@@ -12,4 +12,6 @@ public interface KnowledgeSourceRepository extends JpaRepository<KnowledgeSource
     Optional<KnowledgeSource> findByType(KnowledgeSourceType type);
 
     List<KnowledgeSource> findAllByOrderByIdAsc();
+
+    boolean existsByName(String name);
 }

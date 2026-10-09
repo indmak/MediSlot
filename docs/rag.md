@@ -33,7 +33,7 @@ Documents are grouped by **source** (`knowledge_source`), managed at
 |--------|------|---------|------------|
 | 人工上传 | `MANUAL` | files uploaded by a maintainer | `PUBLIC` |
 | 诊前咨询记录 | `CONSULTATION` | Markdown auto-generated from closed consultation sessions | `PRIVATE` |
-| 外部知识接口 | `EXTERNAL_API` | third-party REST API batches (next phase) | `PUBLIC` |
+| 外部知识接口 | `EXTERNAL_API` | third-party REST API batches (configurable; PubMed preset) | `PUBLIC` |
 
 The three sources are seeded idempotently on startup.
 
@@ -51,6 +51,48 @@ diagnosis note, and the AI summary. Directives and unapproved drafts are exclude
   message bodies); the doctor, department and clinical content are kept.
 - **Threshold**: a session needs at least `kb.consultation.min-messages` messages,
   a summary, a diagnosis note, or an approved draft.
+
+### External API → Markdown (source 3)
+
+`ExternalKnowledgeService` pulls a third-party REST API and renders each item into
+Markdown. A source is described by a JSON config (`knowledge_source.config_json`),
+editable at `/admin/knowledge/sources/{id}/edit`; create with a blank form or the
+**PubMed preset**. Typical flow: call a *list* endpoint → for each item call a
+*detail* endpoint → map fields → render the Markdown template → ingest (PUBLIC,
+deduplicated by content hash).
+
+Config shape:
+
+```jsonc
+{
+  "baseUrl": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils",
+  "keyword": "clinical guideline",   // {{keyword}}
+  "sinceDays": 365,                  // → {{sinceDate}} (yyyy/MM/dd) / {{sinceDateIso}}
+  "maxItems": 20,
+  "requestDelayMs": 400,             // rate limiting between detail calls
+  "category": "外部资料·PubMed",
+  "auth":  { "secretPath": "/run/secrets/medislot/external/kb/xxx/apikey",
+             "header": "Authorization", "scheme": "Bearer " },   // optional
+  "list":   { "path": "/esearch.fcgi", "query": { "db": "pubmed", "term": "{{keyword}}",
+              "mindate": "{{sinceDate}}", "maxdate": "{{today}}" },
+              "itemsPath": "esearchresult.idlist" },
+  "detail": { "path": "/esummary.fcgi", "query": { "id": "{{id}}" },
+              "responsePath": "result.{{id}}" },                  // optional
+  "fields":   { "title": "title", "date": "pubdate", "journal": "fulljournalname" },
+  "computed": { "url": "https://pubmed.ncbi.nlm.nih.gov/{{id}}/" },
+  "template": "# {{title}}\n\n- 来源：PubMed · {{journal}}\n- 日期：{{date}}\n- 链接：{{url}}\n\n{{content}}\n"
+}
+```
+
+- Paths use a minimal syntax: `a.b[0].c` (see `JsonPaths`); `{{...}}` placeholders
+  are substituted and unknown ones stripped.
+- `itemsPath` must resolve to an array; a string element is used directly as `{{id}}`,
+  otherwise `fields.id` (or `id`) is read from the item.
+- **Trigger**: a **立即同步** button, and (if `schedule_cron` is set) a scheduler
+  check every 10 minutes.
+- **Secrets**: `auth.secretPath` is read from the container filesystem; keys never
+  enter the database or logs.
+- Deduplicated by content hash, so re-syncing only adds genuinely new items.
 
 ## Visibility & privacy
 
